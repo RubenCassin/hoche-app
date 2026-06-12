@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>OCHE — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"/>
+<style>
+/* ─── TOKENS ────────────────────────────────────────────── */
+:root{
+  --walnut:      #1A0F08;
+  --walnut-up:   #221610;
+  --walnut-up2:  #2B1D15;
+  --oak:         #4A2818;
+  --oak-light:   #5C3621;
+  --parchment:   #F5EFE2;
+  --cream:       #EBE0C8;
+  --paper:       #FFFBF2;
+  --brick:       #D4421E;
+  --brick-h:     #E04E2A;
+  --amber:       #E8C547;
+  --bull:        #8B1A1A;
+  --chalk:       #F2EDE3;
+
+  --fg1:         #EBE0C8;
+  --fg2:         #B8AC95;
+  --fg3:         #847A68;
+  --fg-light1:   #1A0F08;
+  --fg-light2:   #4A3E2E;
+  --fg-light3:   #847A68;
+
+  --win:         #4F7D3C;
+  --loss:        #8B1A1A;
+  --warn:        #C9802E;
+  --info:        #4A6E8A;
+
+  --shadow-sm:   0 1px 2px rgba(0,0,0,.25);
+  --shadow-md:   0 4px 12px rgba(0,0,0,.35);
+  --shadow-lg:   0 12px 32px rgba(0,0,0,.5);
+  --glow-amber:  0 0 24px rgba(232,197,71,.45);
+  --glow-brick:  0 0 24px rgba(212,66,30,.45);
+
+  --ease-out:    cubic-bezier(.2,.8,.2,1);
+  --overshoot:   cubic-bezier(.34,1.56,.64,1);
+
+  --fd: 'Big Shoulders Display', sans-serif;
+  --fb: 'Manrope', system-ui, sans-serif;
+  --fm: 'JetBrains Mono', monospace;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+
+body{
+  font-family:var(--fb);
+  background:var(--walnut);
+  color:var(--fg1);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.5;
+}
+
+/* ─── SCROLLBAR ─────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--walnut);}
+::-webkit-scrollbar-thumb{background:var(--oak);border-radius:0;}
+
+/* ─── NAV ───────────────────────────────────────────────── */
+nav{
+  position:sticky;top:0;z-index:200;
+  background:rgba(26,15,8,.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--oak);
+  display:flex;align-items:center;gap:0;
+  height:56px;padding:0 48px;
+}
+.nav-logo{
+  font-family:var(--fd);
+  font-size:28px;font-weight:900;
+  color:var(--cream);letter-spacing:.04em;
+  text-transform:uppercase;text-decoration:none;
+  display:flex;align-items:center;gap:0;
+  margin-right:40px;
+}
+.nav-logo-underline{
+  display:flex;flex-direction:column;gap:0;
+}
+.nav-logo-line{
+  display:block;height:2px;background:var(--brick);
+  margin-top:2px;
+}
+.nav-links{display:flex;gap:28px;margin-left:auto;align-items:center;}
+.nav-links a{
+  font-family:var(--fb);font-size:12px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--fg3);text-decoration:none;
+  transition:color .18s var(--ease-out);
+}
+.nav-links a:hover{color:var(--amber);}
+.nav-version{
+  font-family:var(--fm);font-size:11px;color:var(--fg3);
+  border:1px solid var(--oak);padding:3px 8px;
+  margin-left:16px;
+}
+
+/* ─── HERO ──────────────────────────────────────────────── */
+.hero{
+  border-bottom:1px solid var(--oak);
+  padding:80px 48px 72px;
+  display:grid;grid-template-columns:1fr 380px;gap:64px;
+  align-items:center;
+  background:var(--walnut);
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;
+  top:-120px;right:-60px;
+  width:500px;height:500px;
+  background:radial-gradient(circle,rgba(212,66,30,.08) 0%,transparent 65%);
+  pointer-events:none;
+}
+.hero-eyebrow{
+  font-family:var(--fb);font-size:11px;font-weight:800;
+  letter-spacing:.22em;text-transform:uppercase;
+  color:var(--brick);margin-bottom:20px;
+  display:flex;align-items:center;gap:12px;
+}
+.hero-eyebrow::before{
+  content:'';display:block;width:24px;height:2px;background:var(--brick);
+}
+.hero h1{
+  font-family:var(--fd);
+  font-size:88px;font-weight:900;line-height:.88;
+  letter-spacing:-.005em;text-transform:uppercase;
+  color:var(--cream);margin-bottom:24px;
+}
+.hero h1 span{color:var(--brick);}
+.hero-sub{
+  font-family:var(--fb);font-size:16px;
+  color:var(--fg2);line-height:1.6;
+  max-width:520px;margin-bottom:40px;
+}
+.hero-pills{display:flex;gap:8px;flex-wrap:wrap;}
+.pill{
+  font-family:var(--fb);font-size:11px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid var(--oak);
+  padding:5px 12px;color:var(--fg2);
+  transition:all .18s;
+}
+.pill-amber{border-color:rgba(232,197,71,.4);color:var(--amber);}
+.pill-brick{border-color:rgba(212,66,30,.4);color:var(--brick);}
+
+/* ─── HERO SCORE PREVIEW ────────────────────────────────── */
+.hero-preview{
+  background:var(--walnut-up);
+  border:1px solid var(--oak);
+  padding:0;overflow:hidden;
+}
+.preview-header{
+  background:var(--walnut);
+  border-bottom:1px solid var(--oak);
+  padding:10px 16px;
+  display:flex;align-items:center;gap:8px;
+}
+.preview-dot{width:8px;height:8px;background:var(--oak);}
+.preview-dot.active{background:var(--brick);}
+.preview-title{
+  font-family:var(--fm);font-size:10px;
+  color:var(--fg3);letter-spacing:.08em;margin-left:auto;
+}
+.preview-body{padding:24px;}
+.score-split{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--oak);}
+.score-col{
+  background:var(--walnut-up);
+  padding:20px 16px;
+}
+.score-col.active{background:var(--walnut-up2);}
+.score-player{
+  font-family:var(--fd);font-size:12px;font-weight:800;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--amber);margin-bottom:8px;
+}
+.score-player.dim{color:var(--fg3);}
+.score-big{
+  font-family:var(--fd);font-size:80px;font-weight:900;
+  line-height:.88;letter-spacing:-.02em;
+  color:var(--cream);font-variant-numeric:tabular-nums;
+}
+.score-big.dim{color:var(--fg3);}
+.score-sub{
+  font-family:var(--fm);font-size:10px;
+  color:var(--fg2);margin-top:8px;
+}
+.score-sub.dim{color:var(--fg3);}
+.preview-pad{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1px;background:var(--oak);
+  margin-top:1px;
+}
+.pad-btn{
+  background:var(--walnut);
+  font-family:var(--fd);font-size:22px;font-weight:800;
+  color:var(--fg2);text-align:center;padding:14px 0;
+  cursor:pointer;transition:all .15s;
+  text-transform:uppercase;letter-spacing:.02em;
+  border:none;
+}
+.pad-btn:hover{background:var(--walnut-up2);color:var(--cream);}
+.pad-btn.action{color:var(--brick);}
+.pad-btn.undo{color:var(--amber);}
+
+/* ─── PAGE ──────────────────────────────────────────────── */
+.page{max-width:1200px;margin:0 auto;padding:0 48px 120px;}
+
+/* ─── SECTION ───────────────────────────────────────────── */
+.section{margin-top:80px;}
+.section-eyebrow{
+  font-family:var(--fb);font-size:11px;font-weight:800;
+  letter-spacing:.22em;text-transform:uppercase;
+  color:var(--brick);margin-bottom:12px;
+  display:flex;align-items:center;gap:12px;
+}
+.section-eyebrow::before{
+  content:'';display:block;width:20px;height:2px;background:var(--brick);
+}
+.section-title{
+  font-family:var(--fd);font-size:44px;font-weight:900;
+  text-transform:uppercase;color:var(--cream);
+  letter-spacing:0;line-height:.96;margin-bottom:8px;
+}
+.section-desc{
+  font-family:var(--fb);font-size:15px;color:var(--fg2);
+  max-width:580px;line-height:1.6;margin-bottom:40px;
+}
+
+/* ─── SECTION DIVIDER ───────────────────────────────────── */
+.divider{
+  height:1px;background:var(--oak);
+  margin:80px 0 0;
+}
+
+/* ─── COLORS ────────────────────────────────────────────── */
+.color-row{
+  display:flex;flex-wrap:nowrap;
+  gap:1px;background:var(--oak);
+  border:1px solid var(--oak);
+  margin-bottom:24px;
+}
+.color-cell{flex:1 1 0;min-width:0;}
+.color-cell{
+  display:flex;flex-direction:column;
+  background:var(--walnut);
+  flex:1 1 0;min-width:0;
+}
+.color-swatch{height:96px;flex-shrink:0;}
+.color-meta{
+  padding:12px 14px;
+  border-top:1px solid var(--oak);
+  background:var(--walnut);
+}
+.color-name{
+  font-family:var(--fd);font-size:15px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.04em;
+  color:var(--cream);margin-bottom:2px;
+}
+.color-hex{
+  font-family:var(--fm);font-size:11px;color:var(--amber);
+  letter-spacing:.04em;
+}
+.color-role{
+  font-family:var(--fb);font-size:11px;color:var(--fg3);
+  margin-top:5px;line-height:1.45;
+}
+.color-group-label{
+  font-family:var(--fb);font-size:10px;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--fg3);margin-bottom:12px;margin-top:36px;
+  display:flex;align-items:center;gap:10px;
+}
+.color-group-label::after{
+  content:'';flex:1;height:1px;background:var(--oak);
+}
+.color-group-label:first-child{margin-top:0;}
+
+/* ─── TYPOGRAPHIE ───────────────────────────────────────── */
+.type-grid{
+  border:1px solid var(--oak);
+  overflow:hidden;
+}
+.type-row{
+  display:grid;grid-template-columns:180px 1fr 160px;
+  align-items:center;
+  border-bottom:1px solid var(--oak);
+  background:var(--walnut-up);
+}
+.type-row:last-child{border-bottom:none;}
+.type-row:hover{background:var(--walnut-up2);}
+.type-meta{
+  padding:20px 16px;
+  border-right:1px solid var(--oak);
+}
+.type-meta strong{
+  display:block;font-family:var(--fb);font-size:12px;
+  font-weight:800;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--fg2);margin-bottom:3px;
+}
+.type-meta span{
+  font-family:var(--fm);font-size:10px;color:var(--fg3);
+}
+.type-sample{padding:20px 24px;overflow:hidden;}
+.type-spec{
+  padding:20px 16px;border-left:1px solid var(--oak);
+  font-family:var(--fm);font-size:10px;color:var(--fg3);
+  line-height:1.7;
+}
+
+/* display samples */
+.t-display-xxl{font-family:var(--fd);font-size:56px;font-weight:900;line-height:.88;text-transform:uppercase;color:var(--cream);}
+.t-display-xl {font-family:var(--fd);font-size:44px;font-weight:900;line-height:.9; text-transform:uppercase;color:var(--cream);}
+.t-display-lg {font-family:var(--fd);font-size:32px;font-weight:800;line-height:.92;text-transform:uppercase;color:var(--cream);}
+.t-display-md {font-family:var(--fd);font-size:24px;font-weight:800;line-height:.96;text-transform:uppercase;color:var(--cream);}
+.t-score      {font-family:var(--fd);font-size:64px;font-weight:900;line-height:.88;letter-spacing:-.02em;color:var(--amber);font-variant-numeric:tabular-nums;}
+.t-h1         {font-family:var(--fb);font-size:32px;font-weight:700;color:var(--cream);}
+.t-h3         {font-family:var(--fb);font-size:20px;font-weight:700;color:var(--cream);}
+.t-body-lg    {font-family:var(--fb);font-size:16px;color:var(--fg1);line-height:1.55;}
+.t-body-sm    {font-family:var(--fb);font-size:13px;color:var(--fg2);}
+.t-label      {font-family:var(--fb);font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--fg2);}
+.t-mono       {font-family:var(--fm);font-size:13px;color:var(--amber);font-variant-numeric:tabular-nums;}
+
+/* ─── COMPOSANTS ────────────────────────────────────────── */
+.comp-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+  gap:1px;background:var(--oak);border:1px solid var(--oak);
+}
+.comp-cell{
+  background:var(--walnut-up);
+  padding:28px 24px;
+}
+.comp-label{
+  font-family:var(--fb);font-size:10px;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--fg3);margin-bottom:20px;
+  padding-bottom:12px;border-bottom:1px solid var(--oak);
+}
+
+/* Score tile */
+.score-tile{
+  background:var(--walnut);
+  border:1px solid var(--oak);
+  padding:16px 20px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.score-tile-player{
+  font-family:var(--fd);font-size:13px;font-weight:800;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--amber);
+}
+.score-tile-number{
+  font-family:var(--fd);font-size:72px;font-weight:900;
+  line-height:.88;letter-spacing:-.02em;
+  color:var(--cream);font-variant-numeric:tabular-nums;
+}
+.score-tile-sub{font-family:var(--fm);font-size:11px;color:var(--fg2);margin-top:4px;}
+
+/* Dart pad */
+.dart-pad{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1px;background:var(--oak);border:1px solid var(--oak);
+}
+.dart-key{
+  background:var(--walnut);
+  font-family:var(--fd);font-size:18px;font-weight:800;
+  color:var(--fg2);text-align:center;padding:12px 0;
+  cursor:pointer;transition:background .12s,color .12s;
+  text-transform:uppercase;letter-spacing:.02em;border:none;
+}
+.dart-key:hover{background:var(--walnut-up2);color:var(--cream);}
+.dart-key.brick{color:var(--brick);}
+.dart-key.amber{color:var(--amber);}
+.dart-key.wide{grid-column:span 2;}
+
+/* Player card */
+.player-card{
+  background:var(--walnut);
+  border:1px solid var(--oak);
+  display:flex;align-items:center;gap:16px;
+  padding:16px;
+}
+.player-avatar{
+  width:48px;height:48px;background:var(--oak);
+  border:1px solid var(--oak-light);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-size:22px;font-weight:900;
+  color:var(--cream);text-transform:uppercase;flex-shrink:0;
+}
+.player-info{flex:1;}
+.player-name{
+  font-family:var(--fd);font-size:18px;font-weight:900;
+  text-transform:uppercase;letter-spacing:.04em;color:var(--cream);
+}
+.player-stats{
+  font-family:var(--fm);font-size:11px;color:var(--fg2);margin-top:3px;
+}
+.player-badge{
+  font-family:var(--fd);font-size:11px;font-weight:800;
+  letter-spacing:.08em;text-transform:uppercase;
+  padding:4px 10px;border:1px solid;
+}
+.badge-win{color:var(--win);border-color:rgba(79,125,60,.4);}
+.badge-loss{color:var(--fg3);border-color:var(--oak);}
+.badge-amber{color:var(--amber);border-color:rgba(232,197,71,.4);}
+
+/* Stat row */
+.stat-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 0;border-bottom:1px solid var(--oak);
+}
+.stat-row:last-child{border-bottom:none;}
+.stat-label{font-family:var(--fb);font-size:13px;color:var(--fg2);}
+.stat-value{
+  font-family:var(--fm);font-size:14px;font-weight:700;
+  color:var(--cream);letter-spacing:.02em;
+}
+.stat-value.amber{color:var(--amber);}
+.stat-value.brick{color:var(--brick);}
+
+/* Checkout pill */
+.checkout-wrap{display:flex;flex-direction:column;gap:8px;}
+.checkout-pill{
+  display:flex;align-items:center;gap:0;
+  border:1px solid rgba(232,197,71,.35);
+  overflow:hidden;
+}
+.checkout-score{
+  background:rgba(232,197,71,.12);
+  font-family:var(--fd);font-size:18px;font-weight:900;
+  color:var(--amber);padding:10px 14px;
+  letter-spacing:.02em;border-right:1px solid rgba(232,197,71,.2);
+  min-width:60px;text-align:center;
+}
+.checkout-combo{
+  font-family:var(--fm);font-size:12px;color:var(--fg1);
+  padding:0 14px;letter-spacing:.04em;
+}
+.checkout-label{
+  font-family:var(--fb);font-size:10px;font-weight:800;
+  letter-spacing:.16em;text-transform:uppercase;
+  color:var(--fg3);padding:0 12px 0 0;margin-left:auto;
+}
+
+/* Buttons */
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.btn{
+  font-family:var(--fd);font-size:16px;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;
+  padding:10px 22px;border:1px solid;cursor:pointer;
+  transition:all .15s var(--ease-out);
+  text-decoration:none;display:inline-block;
+}
+.btn-brick{
+  background:var(--brick);color:var(--cream);
+  border-color:var(--brick);
+}
+.btn-brick:hover{background:var(--brick-h);border-color:var(--brick-h);}
+.btn-ghost{
+  background:transparent;color:var(--cream);
+  border-color:var(--oak);
+}
+.btn-ghost:hover{border-color:var(--cream);}
+.btn-amber{
+  background:transparent;color:var(--amber);
+  border-color:rgba(232,197,71,.4);
+}
+.btn-amber:hover{background:rgba(232,197,71,.08);}
+.btn-sm{font-size:13px;padding:7px 16px;}
+
+/* Inputs */
+.input-stack{display:flex;flex-direction:column;gap:14px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field-label{
+  font-family:var(--fb);font-size:11px;font-weight:800;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--fg2);
+}
+input[type=text],select{
+  width:100%;background:var(--walnut);
+  border:1px solid var(--oak);
+  color:var(--fg1);font-family:var(--fb);font-size:14px;
+  padding:10px 14px;outline:none;
+  transition:border-color .15s;
+  border-radius:0;
+  -webkit-appearance:none;
+}
+input[type=text]:focus{
+  border-color:var(--brick);
+  box-shadow:0 0 0 2px rgba(212,66,30,.15);
+}
+input.error-input{border-color:var(--loss);}
+.field-err{
+  font-family:var(--fm);font-size:11px;
+  color:var(--loss);
+}
+
+/* Badges (status) */
+.badge-row{display:flex;gap:8px;flex-wrap:wrap;}
+.oche-badge{
+  font-family:var(--fd);font-size:12px;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;
+  padding:4px 10px;border:1px solid;
+}
+.b-win{color:var(--win);border-color:rgba(79,125,60,.4);background:rgba(79,125,60,.08);}
+.b-brick{color:var(--brick);border-color:rgba(212,66,30,.4);background:rgba(212,66,30,.08);}
+.b-amber{color:var(--amber);border-color:rgba(232,197,71,.4);background:rgba(232,197,71,.08);}
+.b-neutral{color:var(--fg2);border-color:var(--oak);background:transparent;}
+.b-bull{color:var(--bull);border-color:rgba(139,26,26,.4);background:rgba(139,26,26,.08);}
+
+/* ─── MOMENT FORT ───────────────────────────────────────── */
+.moment-180{
+  background:var(--walnut);
+  border:1px solid var(--oak);
+  padding:48px 32px;
+  display:flex;flex-direction:column;align-items:center;
+  position:relative;overflow:hidden;
+}
+.moment-180::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at center,rgba(232,197,71,.22) 0%,transparent 62%);
+  pointer-events:none;
+}
+.moment-label{
+  font-family:var(--fb);font-size:11px;font-weight:800;
+  letter-spacing:.3em;text-transform:uppercase;
+  color:var(--amber);margin-bottom:8px;position:relative;
+}
+.moment-number{
+  font-family:var(--fd);font-size:140px;font-weight:900;
+  line-height:.85;letter-spacing:-.02em;
+  color:var(--amber);position:relative;
+  text-shadow:0 0 40px rgba(232,197,71,.5);
+}
+.moment-sub{
+  font-family:var(--fb);font-size:14px;color:var(--cream);
+  margin-top:12px;position:relative;
+}
+
+/* ─── ICONOGRAPHIE ──────────────────────────────────────── */
+.icon-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));
+  gap:1px;background:var(--oak);border:1px solid var(--oak);
+}
+.icon-cell{
+  background:var(--walnut-up);
+  display:flex;flex-direction:column;align-items:center;
+  gap:10px;padding:20px 12px;
+  cursor:pointer;transition:background .15s;
+}
+.icon-cell:hover{background:var(--walnut-up2);}
+.icon-cell svg{width:24px;height:24px;color:var(--fg1);}
+.icon-cell:hover svg{color:var(--amber);}
+.icon-name{
+  font-family:var(--fm);font-size:10px;color:var(--fg3);
+  text-align:center;
+}
+
+/* ─── SPACING ───────────────────────────────────────────── */
+.spacing-list{display:flex;flex-direction:column;gap:0;border:1px solid var(--oak);}
+.spacing-item{
+  display:flex;align-items:center;gap:20px;
+  padding:10px 16px;border-bottom:1px solid var(--oak);
+  background:var(--walnut-up);
+}
+.spacing-item:last-child{border-bottom:none;}
+.spacing-token{font-family:var(--fm);font-size:11px;color:var(--fg3);width:80px;flex-shrink:0;}
+.spacing-vis{flex:1;}
+.spacing-bar{height:20px;background:var(--brick);opacity:.7;}
+.spacing-val{font-family:var(--fm);font-size:11px;color:var(--fg2);width:40px;text-align:right;flex-shrink:0;}
+
+/* ─── RADII ─────────────────────────────────────────────── */
+.radii-row{
+  display:flex;gap:1px;flex-wrap:wrap;
+  background:var(--oak);border:1px solid var(--oak);
+}
+.radii-cell{
+  background:var(--walnut-up);
+  flex:1;min-width:120px;
+  padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px;
+}
+.radii-box{
+  width:64px;height:64px;background:var(--oak-light);
+  border:1px solid var(--oak);
+}
+.radii-name{font-family:var(--fd);font-size:14px;font-weight:800;text-transform:uppercase;color:var(--cream);}
+.radii-val{font-family:var(--fm);font-size:10px;color:var(--fg3);}
+
+/* ─── MOTION ─────────────────────────────────────────────── */
+.motion-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:1px;background:var(--oak);border:1px solid var(--oak);
+}
+.motion-cell{
+  background:var(--walnut-up);padding:24px;
+}
+.motion-name{font-family:var(--fd);font-size:16px;font-weight:800;text-transform:uppercase;color:var(--cream);margin-bottom:4px;}
+.motion-desc{font-family:var(--fb);font-size:12px;color:var(--fg2);margin-bottom:16px;line-height:1.5;}
+.motion-easing{font-family:var(--fm);font-size:10px;color:var(--fg3);margin-bottom:12px;}
+.motion-demo{
+  width:100%;padding:10px;background:var(--walnut);
+  border:1px solid var(--oak);
+  font-family:var(--fd);font-size:14px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.06em;
+  color:var(--fg2);cursor:pointer;transition:all .22s var(--ease-out);
+}
+.motion-demo:hover{border-color:var(--amber);color:var(--amber);}
+
+/* ─── VOIX / MICROCOPY ───────────────────────────────────── */
+.voice-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:1px;
+  background:var(--oak);border:1px solid var(--oak);
+}
+.voice-cell{background:var(--walnut-up);padding:20px 24px;}
+.voice-cell-label{
+  font-family:var(--fb);font-size:10px;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;
+  margin-bottom:12px;padding-bottom:8px;
+  border-bottom:1px solid var(--oak);
+}
+.voice-cell-label.good{color:var(--win);}
+.voice-cell-label.bad{color:var(--loss);}
+.voice-line{
+  font-family:var(--fb);font-size:13px;
+  color:var(--fg1);margin-bottom:8px;padding-left:12px;
+  border-left:2px solid var(--oak);line-height:1.5;
+}
+.voice-line.good{border-left-color:var(--win);}
+.voice-line.bad{border-left-color:var(--loss);color:var(--fg3);}
+
+/* ─── PARCHMENT MODE STRIP ───────────────────────────────── */
+.parchment-strip{
+  background:var(--parchment);
+  border:1px solid rgba(26,15,8,.15);
+  margin-top:1px;
+  padding:32px 40px;
+}
+.parchment-strip .section-eyebrow{color:var(--brick);}
+.parchment-strip .section-eyebrow::before{background:var(--brick);}
+.parchment-strip .section-title{color:var(--fg-light1);}
+.parchment-strip .section-desc{color:var(--fg-light2);}
+
+.p-card{
+  background:var(--cream);
+  border:1px solid rgba(26,15,8,.12);
+  padding:24px;
+}
+.p-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+.p-card .score-tile-player{color:var(--brick);}
+.p-card .score-tile-number{color:var(--fg-light1);}
+.p-card .score-tile-sub{color:var(--fg-light2);}
+
+/* ─── LOGO ───────────────────────────────────────────────── */
+.logo-grid{
+  display:flex;flex-wrap:nowrap;
+  gap:1px;background:var(--oak);border:1px solid var(--oak);
+}
+.logo-cell{
+  flex:1 1 0;min-width:0;overflow:hidden;
+  background:var(--walnut);
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:28px 16px;gap:10px;
+}
+.logo-cell.light{background:var(--parchment);}
+.logo-cell.dark-block{background:#000;}
+.logo-name{font-family:var(--fm);font-size:10px;color:var(--fg3);}
+.logo-cell.light .logo-name{color:var(--fg-light3);}
+
+.oche-wordmark{
+  font-family:var(--fd);font-size:clamp(24px, 4vw, 44px);font-weight:900;
+  text-transform:uppercase;letter-spacing:.04em;
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  white-space:nowrap;
+}
+.oche-wordmark-line{display:block;height:3px;background:currentColor;width:100%;margin-top:4px;}
+
+/* ─── FOOTER ─────────────────────────────────────────────── */
+footer{
+  border-top:1px solid var(--oak);
+  padding:40px 48px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:16px;
+}
+.footer-brand{
+  font-family:var(--fd);font-size:24px;font-weight:900;
+  text-transform:uppercase;color:var(--fg2);
+  display:flex;align-items:center;gap:12px;
+}
+.footer-brand::before{
+  content:'';display:block;width:16px;height:2px;background:var(--brick);
+}
+.footer-info{font-family:var(--fm);font-size:11px;color:var(--fg3);}
+.footer-pills{display:flex;gap:6px;}
+.footer-pill{
+  font-family:var(--fm);font-size:10px;color:var(--fg3);
+  border:1px solid var(--oak);padding:4px 10px;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ═══ NAV ═════════════════════════════════════════════════ -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-underline">
+      <span>OCHE</span>
+      <span class="nav-logo-line"></span>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="#couleurs">Couleurs</a>
+    <a href="#typo">Typographie</a>
+    <a href="#composants">Composants</a>
+    <a href="#icones">Icônes</a>
+    <a href="#voix">Voix</a>
+    <span class="nav-version">v1.0</span>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═════════════════════════════════════════════════ -->
+<div class="hero">
+  <div>
+    <div class="hero-eyebrow">Design System</div>
+    <h1>OCHE<br/><span>Design</span></h1>
+    <p class="hero-sub">Le langage visuel du bar à fléchettes. Walnut, brick, amber — pub authentique + signage moderne. Deux modes, un seul esprit.</p>
+    <div class="hero-pills">
+      <span class="pill pill-brick">Pub anglais</span>
+      <span class="pill pill-amber">Polish 2025</span>
+      <span class="pill">Big Shoulders · Manrope · JetBrains Mono</span>
+    </div>
+  </div>
+  <!-- Score preview -->
+  <div class="hero-preview">
+    <div class="preview-header">
+      <div class="preview-dot active"></div>
+      <div class="preview-dot"></div>
+      <div class="preview-dot"></div>
+      <span class="preview-title">501 — LEG 3</span>
+    </div>
+    <div class="preview-body">
+      <div class="score-split">
+        <div class="score-col active">
+          <div class="score-player">▶ Marc</div>
+          <div class="score-big">241</div>
+          <div class="score-sub">AVG 87.4 · LEG 2</div>
+        </div>
+        <div class="score-col">
+          <div class="score-player dim">Lucie</div>
+          <div class="score-big dim">387</div>
+          <div class="score-sub dim">AVG 79.2 · LEG 1</div>
+        </div>
+      </div>
+      <div class="preview-pad">
+        <button class="pad-btn">7</button>
+        <button class="pad-btn">8</button>
+        <button class="pad-btn">9</button>
+        <button class="pad-btn">4</button>
+        <button class="pad-btn">5</button>
+        <button class="pad-btn">6</button>
+        <button class="pad-btn">1</button>
+        <button class="pad-btn">2</button>
+        <button class="pad-btn">3</button>
+        <button class="pad-btn action">Miss</button>
+        <button class="pad-btn">0</button>
+        <button class="pad-btn undo">⌫</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE ═════════════════════════════════════════════════ -->
+<div class="page">
+
+  <!-- ── COULEURS ────────────────────────────────────────── -->
+  <section class="section" id="couleurs">
+    <div class="section-eyebrow">Couleurs</div>
+    <div class="section-title">Palette OCHE</div>
+    <div class="section-desc">Sept couleurs fondatrices. Deux fonds : <strong style="color:var(--cream)">walnut</strong> (app / scoreboards) et <strong style="color:var(--cream)">parchment</strong> (site marketing). Pas de gradients décoratifs, pas de bleu-violet.</div>
+
+    <div class="color-group-label">Fonds sombres — app & scoreboards</div>
+    <div class="color-row">
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#1A0F08"></div>
+        <div class="color-meta">
+          <div class="color-name">Walnut</div>
+          <div class="color-hex">#1A0F08</div>
+          <div class="color-role">Fond principal · app · scoreboards</div>
+        </div>
+      </div>
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#221610"></div>
+        <div class="color-meta">
+          <div class="color-name">Walnut +6</div>
+          <div class="color-hex">#221610</div>
+          <div class="color-role">Surface élevée · cartes</div>
+        </div>
+      </div>
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#2B1D15"></div>
+        <div class="color-meta">
+          <div class="color-name">Walnut +12</div>
+          <div class="color-hex">#2B1D15</div>
+          <div class="color-role">Surface raised · hover actif</div>
+        </div>
+      </div>
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#4A2818"></div>
+        <div class="color-meta">
+          <div class="color-name">Oak</div>
+          <div class="color-hex">#4A2818</div>
+          <div class="color-role">Bordures · séparateurs · bois</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="color-group-label">Fonds clairs — site marketing</div>
+    <div class="color-row">
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#F5EFE2"></div>
+        <div class="color-meta">
+          <div class="color-name" style="color:var(--fg-light1)">Parchment</div>
+          <div class="color-hex" style="color:var(--fg-light2)">#F5EFE2</div>
+          <div class="color-role" style="color:var(--fg-light3)">Fond clair principal · site marketing</div>
+        </div>
+      </div>
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#EBE0C8"></div>
+        <div class="color-meta">
+          <div class="color-name" style="color:var(--fg-light1)">Cream</div>
+          <div class="color-hex" style="color:var(--fg-light2)">#EBE0C8</div>
+          <div class="color-role" style="color:var(--fg-light3)">Texte sur sombre · surface clair</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="color-group-label">Marque</div>
+    <div class="color-row">
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#D4421E"></div>
+        <div class="color-meta">
+          <div class="color-name">Brick</div>
+          <div class="color-hex">#D4421E</div>
+          <div class="color-role">Rouge brique · CTAs · bullseye outer · accents primaires</div>
+        </div>
+      </div>
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#E8C547"></div>
+        <div class="color-meta">
+          <div class="color-name">Amber</div>
+          <div class="color-hex">#E8C547</div>
+          <div class="color-role">180 · TON · CHECKOUT · moments forts</div>
+        </div>
+      </div>
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#8B1A1A"></div>
+        <div class="color-meta">
+          <div class="color-name">Bull</div>
+          <div class="color-hex">#8B1A1A</div>
+          <div class="color-role">Rouge 50 central · accent rare</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="color-group-label">Sémantiques</div>
+    <div class="color-row">
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#4F7D3C"></div>
+        <div class="color-meta">
+          <div class="color-name">Win</div>
+          <div class="color-hex">#4F7D3C</div>
+          <div class="color-role">Victoire · succès</div>
+        </div>
+      </div>
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#8B1A1A"></div>
+        <div class="color-meta">
+          <div class="color-name">Loss</div>
+          <div class="color-hex">#8B1A1A</div>
+          <div class="color-role">Erreur · élimination</div>
+        </div>
+      </div>
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#C9802E"></div>
+        <div class="color-meta">
+          <div class="color-name">Warn</div>
+          <div class="color-hex">#C9802E</div>
+          <div class="color-role">Avertissement · état limite</div>
+        </div>
+      </div>
+      <div class="color-cell">
+        <div class="color-swatch" style="background:#4A6E8A"></div>
+        <div class="color-meta">
+          <div class="color-name">Info</div>
+          <div class="color-hex">#4A6E8A</div>
+          <div class="color-role">Information neutre · dusty blue</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TYPOGRAPHIE ─────────────────────────────────────── -->
+  <div class="divider"></div>
+  <section class="section" id="typo">
+    <div class="section-eyebrow">Typographie</div>
+    <div class="section-title">Trois familles</div>
+    <div class="section-desc"><strong style="color:var(--cream)">Big Shoulders Display</strong> pour le signage condensé. <strong style="color:var(--cream)">Manrope</strong> pour le corps UI. <strong style="color:var(--cream)">JetBrains Mono</strong> pour la data tabulaire.</div>
+
+    <div class="type-grid">
+      <div class="type-row">
+        <div class="type-meta">
+          <strong>Display XXL</strong>
+          <span>Big Shoulders · 900</span>
+        </div>
+        <div class="type-sample">
+          <div class="t-display-xxl">OCHE</div>
+        </div>
+        <div class="type-spec">56px+<br/>wght 900<br/>UPPERCASE<br/>lh .88</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <strong>Display XL</strong>
+          <span>Big Shoulders · 900</span>
+        </div>
+        <div class="type-sample">
+          <div class="t-display-xl">501 · Leg 3</div>
+        </div>
+        <div class="type-spec">44px<br/>wght 900<br/>UPPERCASE<br/>lh .90</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <strong>Score</strong>
+          <span>Big Shoulders · 900</span>
+        </div>
+        <div class="type-sample">
+          <div class="t-score">241</div>
+        </div>
+        <div class="type-spec">64px<br/>wght 900<br/>tabular-nums<br/>color: amber</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <strong>Display LG</strong>
+          <span>Big Shoulders · 800</span>
+        </div>
+        <div class="type-sample">
+          <div class="t-display-lg">Classement — Saison 3</div>
+        </div>
+        <div class="type-spec">32px<br/>wght 800<br/>UPPERCASE<br/>lh .92</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <strong>Heading 1</strong>
+          <span>Manrope · 700</span>
+        </div>
+        <div class="type-sample">
+          <div class="t-h1">Tes stats cette semaine</div>
+        </div>
+        <div class="type-spec">32px<br/>wght 700<br/>letter-spacing: -.01em</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <strong>Heading 3</strong>
+          <span>Manrope · 700</span>
+        </div>
+        <div class="type-sample">
+          <div class="t-h3">Résumé du leg</div>
+        </div>
+        <div class="type-spec">20px<br/>wght 700</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <strong>Body LG</strong>
+          <span>Manrope · 400</span>
+        </div>
+        <div class="type-sample">
+          <div class="t-body-lg">Marc t'a planté un 9-darter en finale. Va falloir réviser.</div>
+        </div>
+        <div class="type-spec">16px<br/>wght 400<br/>lh 1.55</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <strong>Body SM</strong>
+          <span>Manrope · 400</span>
+        </div>
+        <div class="type-sample">
+          <div class="t-body-sm">Checkout 121 — T20, T15, D8. C'est là que ça se joue.</div>
+        </div>
+        <div class="type-spec">13px<br/>wght 400<br/>lh 1.5</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <strong>Label</strong>
+          <span>Manrope · 800</span>
+        </div>
+        <div class="type-sample">
+          <div class="t-label">AVG · LEG · TON+ · CHECKOUT</div>
+        </div>
+        <div class="type-spec">11px<br/>wght 800<br/>UPPERCASE<br/>ls .20em</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <strong>Mono data</strong>
+          <span>JetBrains Mono · 500</span>
+        </div>
+        <div class="type-sample">
+          <div class="t-mono">AVG 87.4 · 180s 3 · D/O 46%</div>
+        </div>
+        <div class="type-spec">13px<br/>wght 500<br/>tabular-nums</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── LOGO ────────────────────────────────────────────── -->
+  <div class="divider"></div>
+  <section class="section">
+    <div class="section-eyebrow">Logo</div>
+    <div class="section-title">Wordmark OCHE</div>
+    <div class="section-desc">Le logo se décline en wordmark, mark et lockup. La ligne sous le mot est le motif OCHE — signature graphique de l'oche au sol.</div>
+
+    <div class="logo-grid">
+      <div class="logo-cell">
+        <div class="oche-wordmark" style="color:var(--cream)">
+          OCHE
+          <span class="oche-wordmark-line" style="background:var(--brick)"></span>
+        </div>
+        <div class="logo-name">Sur walnut</div>
+      </div>
+      <div class="logo-cell dark-block">
+        <div class="oche-wordmark" style="color:var(--amber)">
+          OCHE
+          <span class="oche-wordmark-line" style="background:var(--amber)"></span>
+        </div>
+        <div class="logo-name">Sur noir — version amber</div>
+      </div>
+      <div class="logo-cell light">
+        <div class="oche-wordmark" style="color:var(--walnut)">
+          OCHE
+          <span class="oche-wordmark-line" style="background:var(--brick)"></span>
+        </div>
+        <div class="logo-name" style="color:var(--fg-light3)">Sur parchment</div>
+      </div>
+      <div class="logo-cell" style="background:var(--brick)">
+        <div class="oche-wordmark" style="color:var(--cream)">
+          OCHE
+          <span class="oche-wordmark-line" style="background:var(--cream)"></span>
+        </div>
+        <div class="logo-name">Sur brick</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── COMPOSANTS ──────────────────────────────────────── -->
+  <div class="divider"></div>
+  <section class="section" id="composants">
+    <div class="section-eyebrow">Composants</div>
+    <div class="section-title">Bibliothèque UI</div>
+    <div class="section-desc">Les briques spécifiques à OCHE — score-tile, dart-pad, player-card, stat-row, checkout-pill. Radius 0 sur les scoreboards (signage rigide).</div>
+
+    <div class="comp-grid">
+
+      <!-- Score tile -->
+      <div class="comp-cell">
+        <div class="comp-label">Score Tile — composant signature</div>
+        <div class="score-tile">
+          <div class="score-tile-player">▶ Marc</div>
+          <div class="score-tile-number">241</div>
+          <div class="score-tile-sub">AVG 87.4 · LEG 3 · 180s ×2</div>
+        </div>
+        <div style="margin-top:8px">
+          <div class="score-tile" style="opacity:.45;border-color:var(--oak)">
+            <div class="score-tile-player" style="color:var(--fg3)">Lucie</div>
+            <div class="score-tile-number" style="color:var(--fg3)">387</div>
+            <div class="score-tile-sub" style="color:var(--fg3)">AVG 79.2 · LEG 2</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dart pad -->
+      <div class="comp-cell">
+        <div class="comp-label">Dart Pad — saisie des scores</div>
+        <div class="dart-pad">
+          <button class="dart-key">7</button>
+          <button class="dart-key">8</button>
+          <button class="dart-key">9</button>
+          <button class="dart-key">4</button>
+          <button class="dart-key">5</button>
+          <button class="dart-key">6</button>
+          <button class="dart-key">1</button>
+          <button class="dart-key">2</button>
+          <button class="dart-key">3</button>
+          <button class="dart-key brick">BUST</button>
+          <button class="dart-key">0</button>
+          <button class="dart-key amber">⌫</button>
+          <button class="dart-key wide amber" style="grid-column:span 3;font-size:16px;letter-spacing:.08em">VALIDER</button>
+        </div>
+      </div>
+
+      <!-- Player card -->
+      <div class="comp-cell">
+        <div class="comp-label">Player Card</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="player-card">
+            <div class="player-avatar">M</div>
+            <div class="player-info">
+              <div class="player-name">Marc D.</div>
+              <div class="player-stats">AVG 87.4 · 180s ×12 · D/O 48%</div>
+            </div>
+            <span class="player-badge badge-win">2-1</span>
+          </div>
+          <div class="player-card">
+            <div class="player-avatar" style="background:var(--walnut);border-color:var(--oak)">L</div>
+            <div class="player-info">
+              <div class="player-name" style="color:var(--fg2)">Lucie R.</div>
+              <div class="player-stats">AVG 79.2 · 180s ×6 · D/O 39%</div>
+            </div>
+            <span class="player-badge badge-loss">1-2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat row -->
+      <div class="comp-cell">
+        <div class="comp-label">Stat Row — profil Strava-tier</div>
+        <div>
+          <div class="stat-row">
+            <span class="stat-label">Three-dart average</span>
+            <span class="stat-value amber">87.4</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Checkout %</span>
+            <span class="stat-value">48%</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">180s ce mois</span>
+            <span class="stat-value brick">12</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Legs joués</span>
+            <span class="stat-value">214</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Meilleur leg</span>
+            <span class="stat-value">15 darts</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Classement</span>
+            <span class="stat-value">#7 · Paris</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Checkout pills -->
+      <div class="comp-cell">
+        <div class="comp-label">Checkout Pill — combinaisons</div>
+        <div class="checkout-wrap">
+          <div class="checkout-pill">
+            <div class="checkout-score">170</div>
+            <div class="checkout-combo">T20 · T20 · Bull</div>
+            <div class="checkout-label">Max</div>
+          </div>
+          <div class="checkout-pill">
+            <div class="checkout-score">121</div>
+            <div class="checkout-combo">T20 · T15 · D8</div>
+            <div class="checkout-label">Pro</div>
+          </div>
+          <div class="checkout-pill">
+            <div class="checkout-score">72</div>
+            <div class="checkout-combo">T20 · D6</div>
+            <div class="checkout-label"></div>
+          </div>
+          <div class="checkout-pill" style="border-color:rgba(212,66,30,.35)">
+            <div class="checkout-score" style="color:var(--brick);background:rgba(212,66,30,.1);border-color:rgba(212,66,30,.2)">40</div>
+            <div class="checkout-combo">D20</div>
+            <div class="checkout-label" style="color:var(--brick)">Simple</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="comp-cell">
+        <div class="comp-label">Boutons</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="btn-row">
+            <a class="btn btn-brick" href="#">Lancer la partie</a>
+            <a class="btn btn-ghost" href="#">Annuler</a>
+          </div>
+          <div class="btn-row">
+            <a class="btn btn-amber btn-sm" href="#">180!</a>
+            <a class="btn btn-ghost btn-sm" href="#">CHECKOUT</a>
+            <a class="btn btn-brick btn-sm" href="#" style="opacity:.4;pointer-events:none">Désactivé</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div class="comp-cell">
+        <div class="comp-label">Badges statut</div>
+        <div class="badge-row">
+          <span class="oche-badge b-amber">180!</span>
+          <span class="oche-badge b-brick">EN JEU</span>
+          <span class="oche-badge b-win">VICTOIRE</span>
+          <span class="oche-badge b-bull">BULL</span>
+          <span class="oche-badge b-neutral">BUST</span>
+          <span class="oche-badge b-neutral">PAUSE</span>
+        </div>
+      </div>
+
+      <!-- Inputs -->
+      <div class="comp-cell">
+        <div class="comp-label">Formulaires</div>
+        <div class="input-stack">
+          <div class="field">
+            <label class="field-label">Pseudo joueur</label>
+            <input type="text" placeholder="Marc D." />
+          </div>
+          <div class="field">
+            <label class="field-label">Score à entrer</label>
+            <input type="text" class="error-input" value="184" />
+            <span class="field-err">Score invalide — max 180</span>
+          </div>
+          <div class="field">
+            <label class="field-label">Format de jeu</label>
+            <select>
+              <option>501 · Best of 5</option>
+              <option>301 · Best of 3</option>
+              <option>Cricket</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── MOMENT FORT ─────────────────────────────────────── -->
+  <div class="divider"></div>
+  <section class="section">
+    <div class="section-eyebrow">Moments forts</div>
+    <div class="section-title">180 · CHECKOUT · TON</div>
+    <div class="section-desc">Flash ambré 200ms fullscreen. Glow amber réservé à ces instants. Jamais de confetti — l'ambré suffit.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--oak);border:1px solid var(--oak);">
+      <div class="moment-180">
+        <div class="moment-label">MAXIMUM</div>
+        <div class="moment-number">180</div>
+        <div class="moment-sub">Marc — bien joué.</div>
+      </div>
+      <div class="moment-180" style="background:var(--walnut-up)">
+        <div class="moment-label" style="color:var(--brick)">CHECKOUT</div>
+        <div class="moment-number" style="color:var(--cream);text-shadow:0 0 40px rgba(212,66,30,.4)">121</div>
+        <div class="moment-sub" style="font-family:var(--fm);color:var(--fg2)">T20 · T15 · D8</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MODE PARCHMENT ──────────────────────────────────── -->
+  <div class="divider"></div>
+  <section class="section">
+    <div class="section-eyebrow">Mode clair</div>
+    <div class="section-title">Parchment — site marketing</div>
+    <div class="section-desc">Fond parchment pour le site vitrine et les écrans onboarding. Même tokens, même composants — palette inversée.</div>
+    <div class="parchment-strip">
+      <div class="p-card-grid">
+        <div class="p-card">
+          <div class="score-tile-player" style="color:var(--brick);font-family:var(--fd);font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;">Marc D.</div>
+          <div style="font-family:var(--fd);font-size:56px;font-weight:900;line-height:.88;letter-spacing:-.02em;color:var(--fg-light1);font-variant-numeric:tabular-nums;">241</div>
+          <div style="font-family:var(--fm);font-size:11px;color:var(--fg-light2);margin-top:6px;">AVG 87.4 · LEG 3</div>
+        </div>
+        <div class="p-card" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-family:var(--fd);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--fg-light1);letter-spacing:.04em;margin-bottom:4px;">Stats saison</div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(26,15,8,.1);">
+            <span style="font-size:13px;font-family:var(--fb);color:var(--fg-light2)">Three-dart avg</span>
+            <span style="font-family:var(--fm);font-size:13px;font-weight:700;color:var(--brick)">87.4</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(26,15,8,.1);">
+            <span style="font-size:13px;font-family:var(--fb);color:var(--fg-light2)">180s</span>
+            <span style="font-family:var(--fm);font-size:13px;font-weight:700;color:var(--fg-light1)">12</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;">
+            <span style="font-size:13px;font-family:var(--fb);color:var(--fg-light2)">Checkout %</span>
+            <span style="font-family:var(--fm);font-size:13px;font-weight:700;color:var(--fg-light1)">48%</span>
+          </div>
+        </div>
+        <div class="p-card" style="display:flex;align-items:center;justify-content:center;">
+          <div style="text-align:center;">
+            <div style="font-family:var(--fd);font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--brick);margin-bottom:8px;">Le bar à fléchettes</div>
+            <div style="font-family:var(--fd);font-size:36px;font-weight:900;text-transform:uppercase;color:var(--walnut);line-height:.92;">OCHE<br/>LONDON</div>
+            <div style="height:2px;background:var(--brick);margin-top:6px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ICÔNES ───────────────────────────────────────────── -->
+  <div class="divider"></div>
+  <section class="section" id="icones">
+    <div class="section-eyebrow">Iconographie</div>
+    <div class="section-title">Lucide + pictos OCHE</div>
+    <div class="section-desc">Lucide stroke 1.75px pour 95 % des icônes UI. 5 pictos OCHE custom pour les éléments sport-spécifiques. Aucun emoji.</div>
+
+    <div class="icon-grid">
+      <!-- OCHE custom -->
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12 L8 12"/><path d="M8 9 L16 12 L8 15 Z" fill="currentColor" stroke="none"/><path d="M16 12 L21 12"/><path d="M19 9 L22 12 L19 15"/><path d="M21 10 L21 14"/>
+        </svg>
+        <span class="icon-name">dart ·custom</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+        </svg>
+        <span class="icon-name">dartboard ·custom</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="icon-name">bullseye ·custom</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="2" y1="18" x2="22" y2="18"/>
+        </svg>
+        <span class="icon-name">oche-line ·custom</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3 C12 3 6 8 6 14 L12 21 L18 14 C18 8 12 3 12 3Z"/>
+        </svg>
+        <span class="icon-name">flight ·custom</span>
+      </div>
+      <!-- Lucide -->
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="icon-name">user ·lucide</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        <span class="icon-name">bar-chart ·lucide</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span class="icon-name">search ·lucide</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="icon-name">users ·lucide</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span class="icon-name">star ·lucide</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        <span class="icon-name">list ·lucide</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="icon-name">clock ·lucide</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ESPACEMENT ───────────────────────────────────────── -->
+  <div class="divider"></div>
+  <section class="section">
+    <div class="section-eyebrow">Espacement</div>
+    <div class="section-title">Grille base 4</div>
+    <div class="section-desc">Tous les espacements sont des multiples de 4. Marges mobiles 24px, desktop 64px.</div>
+
+    <div class="spacing-list">
+      <div class="spacing-item"><span class="spacing-token">--space-1</span><div class="spacing-vis"><div class="spacing-bar" style="width:4px"></div></div><span class="spacing-val">4px</span></div>
+      <div class="spacing-item"><span class="spacing-token">--space-2</span><div class="spacing-vis"><div class="spacing-bar" style="width:8px"></div></div><span class="spacing-val">8px</span></div>
+      <div class="spacing-item"><span class="spacing-token">--space-3</span><div class="spacing-vis"><div class="spacing-bar" style="width:12px"></div></div><span class="spacing-val">12px</span></div>
+      <div class="spacing-item"><span class="spacing-token">--space-4</span><div class="spacing-vis"><div class="spacing-bar" style="width:16px"></div></div><span class="spacing-val">16px</span></div>
+      <div class="spacing-item"><span class="spacing-token">--space-5</span><div class="spacing-vis"><div class="spacing-bar" style="width:20px"></div></div><span class="spacing-val">20px</span></div>
+      <div class="spacing-item"><span class="spacing-token">--space-6</span><div class="spacing-vis"><div class="spacing-bar" style="width:24px"></div></div><span class="spacing-val">24px</span></div>
+      <div class="spacing-item"><span class="spacing-token">--space-8</span><div class="spacing-vis"><div class="spacing-bar" style="width:32px"></div></div><span class="spacing-val">32px</span></div>
+      <div class="spacing-item"><span class="spacing-token">--space-10</span><div class="spacing-vis"><div class="spacing-bar" style="width:40px"></div></div><span class="spacing-val">40px</span></div>
+      <div class="spacing-item"><span class="spacing-token">--space-12</span><div class="spacing-vis"><div class="spacing-bar" style="width:48px"></div></div><span class="spacing-val">48px</span></div>
+      <div class="spacing-item"><span class="spacing-token">--space-16</span><div class="spacing-vis"><div class="spacing-bar" style="width:64px"></div></div><span class="spacing-val">64px</span></div>
+    </div>
+  </section>
+
+  <!-- ── RADII ────────────────────────────────────────────── -->
+  <div class="divider"></div>
+  <section class="section">
+    <div class="section-eyebrow">Border Radius</div>
+    <div class="section-title">Cinq valeurs</div>
+    <div class="section-desc">Radius 0 utilisé intentionnellement pour les scoreboards et TV — côté signage rigide, pub vintage.</div>
+
+    <div class="radii-row">
+      <div class="radii-cell">
+        <div class="radii-box" style="border-radius:0"></div>
+        <div class="radii-name">None</div>
+        <div class="radii-val">0 — scoreboards TV</div>
+      </div>
+      <div class="radii-cell">
+        <div class="radii-box" style="border-radius:4px"></div>
+        <div class="radii-name">SM</div>
+        <div class="radii-val">4px — chips, badges</div>
+      </div>
+      <div class="radii-cell">
+        <div class="radii-box" style="border-radius:8px"></div>
+        <div class="radii-name">MD</div>
+        <div class="radii-val">8px — inputs, boutons, petites cards</div>
+      </div>
+      <div class="radii-cell">
+        <div class="radii-box" style="border-radius:16px"></div>
+        <div class="radii-name">LG</div>
+        <div class="radii-val">16px — grandes cards</div>
+      </div>
+      <div class="radii-cell">
+        <div class="radii-box" style="border-radius:999px;width:64px;height:64px;flex-shrink:0"></div>
+        <div class="radii-name">Pill</div>
+        <div class="radii-val">999px — chips, segmented</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MOTION ───────────────────────────────────────────── -->
+  <div class="divider"></div>
+  <section class="section">
+    <div class="section-eyebrow">Motion</div>
+    <div class="section-title">Animations OCHE</div>
+    <div class="section-desc">Signature : le score <strong style="color:var(--cream)">flippe avec overshoot</strong> (afficheur mécanique de pub). Flash ambré 200ms sur 180/checkout. Pas de bounce gratuit.</div>
+
+    <div class="motion-grid">
+      <div class="motion-cell">
+        <div class="motion-name">Score Flip</div>
+        <div class="motion-desc">Les chiffres basculent comme un afficheur mécanique de pub. Signature OCHE.</div>
+        <div class="motion-easing">cubic-bezier(.34,1.56,.64,1) · 250ms</div>
+        <button class="motion-demo" onclick="this.style.transform='rotateX(90deg)';this.style.color='var(--amber)';setTimeout(()=>{this.style.transform='';this.style.color=''},300)">241 → 180</button>
+      </div>
+      <div class="motion-cell">
+        <div class="motion-name">Standard</div>
+        <div class="motion-desc">Transitions UI standard — hover, focus, changement d'état.</div>
+        <div class="motion-easing">cubic-bezier(.2,.8,.2,1) · 220ms</div>
+        <button class="motion-demo">Hover me</button>
+      </div>
+      <div class="motion-cell">
+        <div class="motion-name">Micro</div>
+        <div class="motion-desc">Feedback immédiat — press de bouton, validation pad.</div>
+        <div class="motion-easing">cubic-bezier(.2,.8,.2,1) · 150ms</div>
+        <button class="motion-demo" onclick="this.style.transform='scale(.97)';setTimeout(()=>this.style.transform='',150)">Press</button>
+      </div>
+      <div class="motion-cell">
+        <div class="motion-name">Screen</div>
+        <div class="motion-desc">Transitions d'écran entier, navigation entre surfaces.</div>
+        <div class="motion-easing">cubic-bezier(.2,.8,.2,1) · 350ms</div>
+        <button class="motion-demo">Screen switch</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VOIX ─────────────────────────────────────────────── -->
+  <div class="divider"></div>
+  <section class="section" id="voix">
+    <div class="section-eyebrow">Voix & Microcopy</div>
+    <div class="section-title">Le ton OCHE</div>
+    <div class="section-desc">Tutoiement, sec, pro mais joueur. <strong style="color:var(--cream)">ALL CAPS</strong> pour les moments forts. Trash-talk amical autorisé. Pas d'emoji, jamais.</div>
+
+    <div class="voice-grid">
+      <div class="voice-cell">
+        <div class="voice-cell-label good">✓ Bien</div>
+        <div class="voice-line good">180! Tu sais qu'il y a des gens qui n'en font jamais, c'est ça ?</div>
+        <div class="voice-line good">Marc t'a planté un 9-darter en finale. Va falloir réviser.</div>
+        <div class="voice-line good">Checkout 121 — T20, T15, D8. C'est là que ça se joue.</div>
+        <div class="voice-line good">Tu mènes 2-1. Reste calme.</div>
+        <div class="voice-line good">Partie terminée. Marc gagne 3-2. Bien joué.</div>
+        <div class="voice-line good">Aucune partie pour l'instant. Lance-toi.</div>
+        <div class="voice-line good">Score enregistré. 95 average — pas mal du tout.</div>
+      </div>
+      <div class="voice-cell">
+        <div class="voice-cell-label bad">✗ À éviter</div>
+        <div class="voice-line bad">🎯 Bravo champion ! 🎉</div>
+        <div class="voice-line bad">Cher utilisateur, vous avez gagné une partie.</div>
+        <div class="voice-line bad">OMG you scored so much!!</div>
+        <div class="voice-line bad">Pas mal pour un débutant 🙃</div>
+        <div class="voice-line bad">✨ Félicitations ! Vous êtes incroyable ! ✨</div>
+        <div class="voice-line bad">Veuillez saisir votre score ci-dessous s'il vous plaît.</div>
+        <div class="voice-line bad">Hum, il semble qu'une erreur se soit produite...</div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /page -->
+
+<!-- ═══ FOOTER ═══════════════════════════════════════════════ -->
+<footer>
+  <div>
+    <div class="footer-brand">OCHE Design System</div>
+    <div class="footer-info" style="margin-top:6px;">Walnut · Brick · Amber · Big Shoulders Display · Manrope · JetBrains Mono</div>
+  </div>
+  <div class="footer-pills">
+    <span class="footer-pill">v1.0</span>
+    <span class="footer-pill">Figma tokens</span>
+    <span class="footer-pill">Lucide 1.75px</span>
+    <span class="footer-pill">WCAG AA</span>
+    <span class="footer-pill">Dark · Light</span>
+  </div>
+</footer>
+
+</body>
+</html>

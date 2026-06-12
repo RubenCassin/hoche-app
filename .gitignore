@@ -1,0 +1,37 @@
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Expo / Metro
+.expo/
+dist/
+web-build/
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Base de données + sauvegardes (données utilisateur — jamais dans git)
+backend/db/*.db
+backend/db/*.db-journal
+backend/db/*.json
+
+# Artefacts générés
+scripts/.botEngine.bundle.mjs
+.railway-login*.txt
+
+# Misc
+npm-debug.*
+*.log
+.DS_Store
+
+# Ancien clone GitHub vide (pas l'app)
+OCHE/

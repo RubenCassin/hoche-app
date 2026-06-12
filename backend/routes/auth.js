@@ -1,0 +1,216 @@
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const router = express.Router();
+const { prisma, userToPublic, jarr, jstr } = require('../db/prisma');
+const { signToken, requireAuth } = require('../auth');
+const { rateLimit } = require('../rateLimit');
+
+function normalizeUsername(raw) {
+  const u = String(raw || '').trim().toLowerCase().replace(/^@+/, '');
+  return u ? '@' + u : '';
+}
+
+function passwordError(password) {
+  if (password.length < 8 || password.length > 72 || !/[a-zA-Zà-ÿÀ-Ÿ]/.test(password) || !/\d/.test(password)) {
+    return 'Mot de passe : 8 caractères min., avec au moins une lettre et un chiffre.';
+  }
+  return null;
+}
+
+// ── Anti brute-force ──────────────────────────────────────────────────────────
+// Caps par IP sur les routes publiques + verrou par pseudo après échecs répétés
+// (le verrou ne compte que les VRAIS échecs, pour ne pas bloquer une soirée où
+// tout le monde se connecte depuis le même réseau).
+const registerLimit = rateLimit({ windowMs: 30 * 60 * 1000, max: 10 });
+const loginIpLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 30 });
+
+const FAIL_WINDOW_MS = 15 * 60 * 1000;
+const FAIL_MAX = 10;
+const failedLogins = new Map(); // username -> { count, first }
+function loginLocked(username) {
+  const e = failedLogins.get(username);
+  if (!e) return false;
+  if (Date.now() - e.first > FAIL_WINDOW_MS) {
+    failedLogins.delete(username);
+    return false;
+  }
+  return e.count >= FAIL_MAX;
+}
+function noteLoginFail(username) {
+  const e = failedLogins.get(username);
+  if (!e || Date.now() - e.first > FAIL_WINDOW_MS) {
+    failedLogins.set(username, { count: 1, first: Date.now() });
+  } else {
+    e.count += 1;
+  }
+}
+
+// POST /auth/register { name, username, password }
+router.post('/register', registerLimit, async function (req, res, next) {
+  try {
+    const name = String(req.body.name || '').trim();
+    const username = normalizeUsername(req.body.username);
+    const password = String(req.body.password || '');
+
+    if (!name || name.length > 40) return res.status(400).json({ error: 'Nom requis (40 caractères max.)' });
+    if (!/^@[a-z0-9_.]{2,20}$/.test(username))
+      return res.status(400).json({ error: 'Pseudo invalide (2-20 car. : a-z, 0-9, _ .)' });
+    const pwErr = passwordError(password);
+    if (pwErr) return res.status(400).json({ error: pwErr });
+
+    const taken = await prisma.user.findUnique({ where: { username } });
+    if (taken) return res.status(409).json({ error: 'Ce pseudo est déjà pris' });
+
+    const user = await prisma.user.create({
+      data: { name, username, passwordHash: bcrypt.hashSync(password, 10) },
+    });
+    res.status(201).json({ token: signToken(user.id), user: userToPublic(user) });
+  } catch (e) { next(e); }
+});
+
+// POST /auth/login { username, password }
+router.post('/login', loginIpLimit, async function (req, res, next) {
+  try {
+    const username = normalizeUsername(req.body.username);
+    const password = String(req.body.password || '');
+
+    if (loginLocked(username)) {
+      return res.status(429).json({ error: 'Trop de tentatives pour ce compte — réessaie dans 15 minutes.' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { username } });
+    if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+      noteLoginFail(username);
+      return res.status(401).json({ error: 'Pseudo ou mot de passe incorrect' });
+    }
+
+    failedLogins.delete(username);
+    res.json({ token: signToken(user.id), user: userToPublic(user) });
+  } catch (e) { next(e); }
+});
+
+// GET /auth/me  (auth)
+router.get('/me', requireAuth, async function (req, res, next) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user) return res.status(404).json({ error: 'Compte introuvable' });
+    res.json(userToPublic(user));
+  } catch (e) { next(e); }
+});
+
+// PATCH /auth/me { name?, avatarUrl?, currentPassword?, newPassword? }  (auth)
+// Édition du compte : nom affiché, avatar, changement de mot de passe.
+router.patch('/me', requireAuth, async function (req, res, next) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user) return res.status(404).json({ error: 'Compte introuvable' });
+
+    const data = {};
+    if (req.body.name !== undefined) {
+      const name = String(req.body.name || '').trim();
+      if (!name || name.length > 40) return res.status(400).json({ error: 'Nom requis (40 caractères max.)' });
+      data.name = name;
+    }
+    if (req.body.avatarUrl !== undefined) {
+      const a = req.body.avatarUrl === null ? null : String(req.body.avatarUrl).trim();
+      if (a && (a.length > 500 || !/^https?:\/\//.test(a))) {
+        return res.status(400).json({ error: 'URL d’avatar invalide (http(s), 500 car. max.)' });
+      }
+      data.avatarUrl = a || null;
+    }
+    if (req.body.newPassword !== undefined) {
+      const current = String(req.body.currentPassword || '');
+      if (!bcrypt.compareSync(current, user.passwordHash)) {
+        return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
+      }
+      const pwErr = passwordError(String(req.body.newPassword || ''));
+      if (pwErr) return res.status(400).json({ error: pwErr });
+      data.passwordHash = bcrypt.hashSync(String(req.body.newPassword), 10);
+    }
+
+    const updated = await prisma.user.update({ where: { id: req.userId }, data });
+    res.json(userToPublic(updated));
+  } catch (e) { next(e); }
+});
+
+// DELETE /auth/me { password }  (auth)
+// Suppression du compte avec cascade : parties, social, notifs, Elo, blocs
+// (FK onDelete: Cascade) + nettoyage des références croisées (likes, notifs
+// émises, opponentIds chez les adversaires).
+router.delete('/me', requireAuth, async function (req, res, next) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user) return res.status(404).json({ error: 'Compte introuvable' });
+    if (!bcrypt.compareSync(String(req.body.password || ''), user.passwordHash)) {
+      return res.status(401).json({ error: 'Mot de passe incorrect' });
+    }
+    const id = req.userId;
+
+    // Références croisées hors FK.
+    await prisma.notification.deleteMany({ where: { actorId: id } });
+
+    const likedPosts = await prisma.post.findMany({
+      where: { likes: { contains: '' + id } }, // pré-filtre large, re-vérifié en JS
+      select: { id: true, likes: true },
+    });
+    for (const p of likedPosts) {
+      const likes = jarr(p.likes);
+      if (likes.includes(id)) {
+        await prisma.post.update({ where: { id: p.id }, data: { likes: jstr(likes.filter((x) => x !== id)) } });
+      }
+    }
+
+    const oppGames = await prisma.game.findMany({
+      where: { opponentIds: { contains: '' + id } },
+      select: { id: true, opponentIds: true },
+    });
+    for (const g of oppGames) {
+      const ids = jarr(g.opponentIds);
+      if (ids.includes(id)) {
+        await prisma.game.update({ where: { id: g.id }, data: { opponentIds: jstr(ids.filter((x) => x !== id)) } });
+      }
+    }
+
+    await prisma.user.delete({ where: { id } }); // cascade le reste
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// POST /auth/location { country, countryCode, region, city }  (auth)
+// Updates the signed-in user's location (drives the geo leaderboard).
+router.post('/location', requireAuth, async function (req, res, next) {
+  try {
+    const clip = function (v, n) { return v ? String(v).trim().slice(0, n) : null; };
+    const updated = await prisma.user.update({
+      where: { id: req.userId },
+      data: {
+        country: clip(req.body.country, 60),
+        countryCode: req.body.countryCode ? String(req.body.countryCode).trim().toUpperCase().slice(0, 2) : null,
+        region: clip(req.body.region, 80),
+        city: clip(req.body.city, 80),
+      },
+    });
+    res.json(userToPublic(updated));
+  } catch (e) { next(e); }
+});
+
+// POST /auth/push-token { token }  (auth)
+// Registers an Expo push token for this account (deduped).
+router.post('/push-token', requireAuth, async function (req, res, next) {
+  try {
+    const token = String(req.body.token || '').trim();
+    if (!token || token.length > 200) return res.status(400).json({ error: 'Token manquant ou invalide' });
+
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user) return res.status(404).json({ error: 'Compte introuvable' });
+
+    const tokens = jarr(user.pushTokens);
+    if (!tokens.includes(token)) {
+      tokens.push(token);
+      await prisma.user.update({ where: { id: req.userId }, data: { pushTokens: jstr(tokens) } });
+    }
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+module.exports = router;

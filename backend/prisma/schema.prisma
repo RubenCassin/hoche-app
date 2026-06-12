@@ -1,0 +1,171 @@
+// HOCHE — schéma Prisma (SQLite aujourd'hui, prêt à passer PostgreSQL :
+// changer provider + url, les types restent valides).
+//
+// Choix assumés pour SQLite (pas de type Json natif) : les champs « documents »
+// jamais requêtés finement — visits (replays, futurs coords caméra), heatmap,
+// pushTokens, badges, opponents, likes, confirmedBy — sont des String JSON
+// sérialisés, encapsulés par backend/db/prisma.js. À la bascule Postgres ils
+// pourront devenir Json sans toucher aux routes.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  country      String?
+  countryCode  String?
+  region       String?
+  city         String?
+  avatarUrl    String?
+  elo          Int      @default(1000)
+  eloGames     Int      @default(0)
+  flags        Int      @default(0)
+  suspect      Boolean  @default(false)
+  demo         Boolean  @default(false)
+  pushTokens   String   @default("[]") // JSON string[]
+  badges       String   @default("[]") // JSON string[]
+
+  games         Game[]
+  posts         Post[]
+  comments      Comment[]
+  eloHistory    EloPoint[]
+  following     Follow[]    @relation("follower")
+  followers     Follow[]    @relation("following")
+  sentChallenges     Challenge[] @relation("challengeFrom")
+  receivedChallenges Challenge[] @relation("challengeTo")
+  notifications Notification[]
+  blocking      Block[] @relation("blocker")
+  blockedBy     Block[] @relation("blocked")
+}
+
+model Game {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameType         String   @default("x01")
+  matchWon         Boolean  @default(false)
+  legsWon          Int      @default(0)
+  legsPlayed       Int      @default(0)
+  opponents        String   @default("[]") // JSON string[] (noms affichés)
+  opponentIds      String   @default("[]") // JSON number[] (comptes réels)
+  dartsThrown      Int      @default(0)
+  avg              Float    @default(0)
+  total180s        Int      @default(0)
+  highestCheckout  Int      @default(0)
+  score            Int      @default(0)
+  heatmap          String   @default("{}") // JSON Record<segment, count>
+  checkoutAttempts Int      @default(0)
+  checkoutHits     Int      @default(0)
+  doublesHit       Int      @default(0)
+  first9Points     Int      @default(0)
+  first9Darts      Int      @default(0)
+  startScore       Int      @default(0)
+  visits           String   @default("[]") // JSON Visit[] (replays ; coords caméra plus tard)
+  online           Boolean  @default(false)
+  suspect          Boolean  @default(false)
+  reported         Boolean  @default(false)
+  confirmed        Boolean  @default(false)
+  confirmedBy      String   @default("[]") // JSON number[]
+  demo             Boolean  @default(false)
+  finishedAt       DateTime @default(now())
+
+  @@index([userId, finishedAt])
+}
+
+model Follow {
+  followerId  Int
+  followingId Int
+  createdAt   DateTime @default(now())
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  likes     String   @default("[]") // JSON number[] (ids des likeurs)
+  createdAt DateTime @default(now())
+  comments  Comment[]
+
+  @@index([userId, createdAt])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+}
+
+model Challenge {
+  id        Int      @id @default(autoincrement())
+  fromId    Int
+  from      User     @relation("challengeFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  toId      Int
+  to        User     @relation("challengeTo", fields: [toId], references: [id], onDelete: Cascade)
+  gameType  String   @default("x01")
+  legsToWin Int      @default(1)
+  message   String   @default("")
+  status    String   @default("pending") // pending | accepted | declined | done
+  createdAt DateTime @default(now())
+
+  @@index([toId, status])
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String
+  // Références volontairement sans FK : cibles hétérogènes, le code null-check
+  // déjà les entités disparues (« Quelqu'un »…).
+  actorId     Int?
+  postId      Int?
+  gameId      Int?
+  challengeId Int?
+  badge       String?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+model Block {
+  blockerId Int
+  blockedId Int
+  createdAt DateTime @default(now())
+  blocker   User     @relation("blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+}
+
+model EloPoint {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  elo       Int
+  gameId    Int?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}

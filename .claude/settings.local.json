@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(ls -la \"/c/Users/ruben/Desktop/DA-maquette.zip\" 2>&1)",
+      "Bash(mkdir -p .da-maquette)",
+      "Bash(unzip -o \"/c/Users/ruben/Desktop/DA-maquette.zip\")",
+      "Bash(cat)",
+      "Bash(node /tmp/atc_test.mjs)",
+      "Bash(rm -f /tmp/atc_test.mjs)",
+      "Bash(ls -la assets)",
+      "Bash(ls -la .da-maquette)",
+      "Read(//c/Users/ruben/Pictures/projetFlechette/**)",
+      "Bash(cd \"C:/Users/ruben/Pictures/projetFlechette\"; echo \"===Oche\\\\$/design tree===\"; find 'Oche$/design' -maxdepth 3 2>/dev/null | head -80)",
+      "Bash(cd 'C:/Users/ruben/Pictures/projetFlechette/Oche$/design'; cat colors_and_type.css)",
+      "Bash(npm install *)",
+      "Bash(node -e \"console.log\\(Object.keys\\(require\\('@expo-google-fonts/big-shoulders-display'\\)\\).filter\\(k=>/700|800|900/.test\\(k\\)\\)\\)\")",
+      "Bash(node -e \"console.log\\(Object.keys\\(require\\('@expo-google-fonts/manrope'\\)\\).filter\\(k=>/400Regular|500|600|700|800/.test\\(k\\)\\)\\)\")",
+      "Bash(node -e \"console.log\\(Object.keys\\(require\\('@expo-google-fonts/jetbrains-mono'\\)\\).filter\\(k=>/400Regular|500|700/.test\\(k\\)\\)\\)\")",
+      "Bash(xargs -n1 basename)",
+      "Bash(npx expo *)",
+      "Bash(node -e \"console.log\\(require\\('expo-secure-store/package.json'\\).version\\)\")",
+      "Bash(pkill -f \"node server.js\")",
+      "Bash(node -e \"console.log\\('resvg version', require\\('@resvg/resvg-js/package.json'\\).version\\)\")",
+      "Bash(npx esbuild *)",
+      "Bash(cp /tmp/botsim.mjs ./botsim.mjs)",
+      "Bash(node ./botsim.mjs)",
+      "Bash(rm -f ./botsim.mjs ./oche-bots.mjs /tmp/botsim.mjs)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); const d={...p.dependencies,...p.devDependencies}; ['expo-location','expo-notifications','expo-device','expo-constants'].forEach\\(k=>console.log\\(k, d[k]||'— NOT INSTALLED'\\)\\)\")",
+      "WebSearch",
+      "WebFetch(domain:justuseapp.com)"
+    ]
+  }
+}
