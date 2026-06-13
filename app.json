@@ -57,6 +57,12 @@
         "projectId": "ea933746-8d2b-459d-b5b2-4a05d448a4e0"
       }
     },
-    "owner": "panda_png"
+    "owner": "panda_png",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ea933746-8d2b-459d-b5b2-4a05d448a4e0"
+    }
   }
 }

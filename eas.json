@@ -10,13 +10,15 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://hoche-backend-production.up.railway.app"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://hoche-backend-production.up.railway.app"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {
