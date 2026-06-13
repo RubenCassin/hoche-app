@@ -484,6 +484,16 @@ export default function ScoringScreen() {
   const isGameOver = matchWinnerIndex !== null;
   const activePlayer = players[activePlayerIndex];
   const activeIsBot = !!botLevels[activePlayerIndex] && !isGameOver;
+
+  // Live X01 countdown: the active player's score ticks down with each dart of
+  // the in-progress visit (per-dart modes), not only when the visit commits.
+  // A busting visit (would go < 0) keeps the committed score until it resets,
+  // so the number never flashes negative.
+  const liveRemaining = (p: PlayerState, i: number) => {
+    if (!isX01 || !perDart || i !== activePlayerIndex || isGameOver) return p.remaining;
+    const live = p.remaining - visitTotal;
+    return live >= 0 ? live : p.remaining;
+  };
   const inputDisabled =
     activeIsBot ||
     (perDartGame
@@ -730,7 +740,7 @@ export default function ScoringScreen() {
                 <ScoreTile
                   dense
                   playerName={activePlayer.name}
-                  remaining={activePlayer.remaining}
+                  remaining={liveRemaining(activePlayer, activePlayerIndex)}
                   average={activePlayer.avg}
                   dartsThrown={activePlayer.dartsThrown}
                   isActive={!isGameOver}
@@ -765,7 +775,7 @@ export default function ScoringScreen() {
               <View key={p.id} style={styles.tileCell}>
                 <ScoreTile
                   playerName={p.name}
-                  remaining={p.remaining}
+                  remaining={liveRemaining(p, i)}
                   average={p.avg}
                   dartsThrown={p.dartsThrown}
                   isActive={i === activePlayerIndex && !isGameOver}

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,7 +11,7 @@ import { QuickPad } from '@/components/QuickPad';
 import { Spacing, Radii } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import type { DartEntry } from '@/hooks/useGameStore';
-import { getDrill, type DrillState } from '@/hooks/practiceDrills';
+import { getDrill, makeCustomCheckoutDrill, type DrillState } from '@/hooks/practiceDrills';
 import { usePracticeStore } from '@/hooks/usePracticeStore';
 
 function dartLabel(d?: DartEntry): string {
@@ -25,8 +25,18 @@ export default function PracticeRunScreen() {
   const insets = useSafeAreaInsets();
   const C = useTheme();
   const styles = makeStyles(C);
-  const params = useLocalSearchParams<{ drill?: string }>();
-  const drill = getDrill(params.drill ?? '');
+  const params = useLocalSearchParams<{ drill?: string; target?: string; darts?: string }>();
+  // Drill perso : construit à la volée depuis les params (cible + fléchettes).
+  const drill = useMemo(() => {
+    if (params.drill === 'custom') {
+      const t = parseInt(params.target ?? '', 10);
+      const d = parseInt(params.darts ?? '', 10);
+      if (t > 0 && d > 0) return makeCustomCheckoutDrill(t, d);
+      return undefined;
+    }
+    return getDrill(params.drill ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.drill, params.target, params.darts]);
   const addResult = usePracticeStore((s) => s.addResult);
   const records = usePracticeStore((s) => s.records);
 
