@@ -436,3 +436,62 @@ export const declineChallenge = (id: number) =>
   api.post<{ status: string }>(`/challenges/${id}/decline`).then((r) => r.data);
 
 export const getChallenges = () => api.get<Challenge[]>('/challenges').then((r) => r.data);
+
+// ─── Chat ────────────────────────────────────────────────────────────────────
+
+export type ChatMessageKind = 'text' | 'match_invite';
+
+export interface ChatMessage {
+  id: number;
+  conversationId: number;
+  senderId: number;
+  senderName: string;
+  text: string;
+  kind: ChatMessageKind;
+  meta: { code?: string; [k: string]: unknown };
+  created_at: string;
+}
+
+export interface Conversation {
+  id: number;
+  isGroup: boolean;
+  name: string;
+  avatarUrl: string | null;
+  otherId: number | null; // direct uniquement : l'autre joueur
+  members: User[];
+  lastMessage: { text: string; kind: ChatMessageKind; senderId: number; created_at: string } | null;
+  unread: number;
+  updated_at: string;
+}
+
+export const getConversations = () =>
+  api.get<Conversation[]>('/chat/conversations').then((r) => r.data);
+
+export const getChatUnread = () =>
+  api.get<{ unread: number }>('/chat/unread').then((r) => r.data);
+
+/** Ouvre (ou réutilise) une conversation directe avec un joueur. */
+export const openDirectConversation = (userId: number) =>
+  api.post<Conversation>('/chat/conversations', { userId }).then((r) => r.data);
+
+export const createGroup = (name: string, memberIds: number[]) =>
+  api.post<Conversation>('/chat/conversations', { name, memberIds }).then((r) => r.data);
+
+export const getMessages = (conversationId: number) =>
+  api.get<ChatMessage[]>(`/chat/conversations/${conversationId}/messages`).then((r) => r.data);
+
+export const sendMessage = (
+  conversationId: number,
+  text: string,
+  kind: ChatMessageKind = 'text',
+  meta?: Record<string, unknown>
+) =>
+  api
+    .post<ChatMessage>(`/chat/conversations/${conversationId}/messages`, { text, kind, meta })
+    .then((r) => r.data);
+
+export const markConversationRead = (conversationId: number) =>
+  api.post(`/chat/conversations/${conversationId}/read`).then((r) => r.data);
+
+export const addGroupMembers = (conversationId: number, memberIds: number[]) =>
+  api.post<Conversation>(`/chat/conversations/${conversationId}/members`, { memberIds }).then((r) => r.data);

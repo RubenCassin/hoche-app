@@ -20,7 +20,7 @@ import { Spacing, Radii, Shadows } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { flagEmoji } from '@/constants/flag';
-import { getLeaderboard, searchPlayers, getChallenges, getLeague, getOnlineFriends, getLiveMatches, type LeaderboardEntry, type LeaderboardScope } from '@/services/api';
+import { getLeaderboard, searchPlayers, getChallenges, getLeague, getOnlineFriends, getLiveMatches, getChatUnread, type LeaderboardEntry, type LeaderboardScope } from '@/services/api';
 
 type Metric = 'elo' | 'avg' | 's180' | 'wins';
 
@@ -72,6 +72,7 @@ export default function OnlineScreen() {
 
   const { data: league } = useQuery({ queryKey: ['league'], queryFn: getLeague, enabled: !guestMode });
   const { data: challenges } = useQuery({ queryKey: ['challenges'], queryFn: getChallenges, enabled: !guestMode });
+  const { data: chatUnread } = useQuery({ queryKey: ['chat-unread'], queryFn: getChatUnread, refetchInterval: 20000, enabled: !guestMode });
   const { data: onlineFriends } = useQuery({ queryKey: ['friends-online'], queryFn: getOnlineFriends, refetchInterval: 15000, enabled: !guestMode });
   const { data: liveMatches } = useQuery({ queryKey: ['live-matches'], queryFn: getLiveMatches, refetchInterval: 15000, enabled: !guestMode });
   const pendingChallenges = (challenges ?? []).filter((c) => c.incoming && c.status === 'pending').length;
@@ -133,6 +134,19 @@ export default function OnlineScreen() {
             <View style={styles.challengeRight}>
               <OcheText variant="labelSm" allCaps color={C.onBrick}>X01 · live</OcheText>
               <OcheText variant="labelMd" allCaps color={C.onBrick}>→</OcheText>
+            </View>
+          </Pressable>
+
+          {/* Messages */}
+          <Pressable onPress={() => router.push('/messages')} style={({ pressed }) => [styles.challengeRow, pressed && { opacity: 0.85 }]}>
+            <OcheText variant="h5" color={C.cream}>💬 Messages</OcheText>
+            <View style={styles.challengeRight}>
+              {(chatUnread?.unread ?? 0) > 0 && (
+                <View style={styles.badge}>
+                  <OcheText variant="labelSm" allCaps color={C.onBrick}>{chatUnread!.unread}</OcheText>
+                </View>
+              )}
+              <OcheText variant="labelMd" allCaps color={C.orange}>→</OcheText>
             </View>
           </Pressable>
 

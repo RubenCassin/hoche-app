@@ -23,6 +23,7 @@ import { Spacing, Radii } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { connectLive, onLive, liveSend, isLiveReady } from '@/services/liveSocket';
+import { sendMessage } from '@/services/api';
 import { queryClient } from '@/services/queryClient';
 
 type Phase = 'connecting' | 'idle' | 'waiting' | 'playing';
@@ -55,9 +56,13 @@ export default function OnlineMatchScreen() {
   const C = useTheme();
   const styles = makeStyles(C);
   const token = useAuthStore((s) => s.token);
-  const params = useLocalSearchParams<{ join?: string; invite?: string; name?: string; spectate?: string }>();
+  const params = useLocalSearchParams<{ join?: string; invite?: string; name?: string; spectate?: string; host?: string; conv?: string }>();
   const inviteId = params.invite ? Number(params.invite) : null;
   const inviteName = params.name || 'ton ami';
+  // Lancé depuis un chat : on crée un salon et on poste le code dans la conversation.
+  const hostConvId = params.host && params.conv ? Number(params.conv) : null;
+  const hostStartedRef = useRef(false);
+  const postedConvRef = useRef(false);
 
   const [phase, setPhase] = useState<Phase>(isLiveReady() ? 'idle' : 'connecting');
   const [err, setErr] = useState<string | null>(null);
@@ -100,6 +105,17 @@ export default function OnlineMatchScreen() {
           inRoomRef.current = true;
           setPhase('waiting');
           if (m.invitedName) setNote(`Invitation envoyée à ${m.invitedName}…`);
+          // Salon créé depuis un chat → poste l'invitation (avec le code) une fois.
+          if (hostConvId && !postedConvRef.current) {
+            postedConvRef.current = true;
+            sendMessage(hostConvId, '', 'match_invite', { code: m.code })
+              .then(() => {
+                queryClient.invalidateQueries({ queryKey: ['chat-messages', hostConvId] });
+                queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+                setNote('Invitation postée dans le groupe — les 2 premiers qui rejoignent jouent.');
+              })
+              .catch(() => {});
+          }
           break;
         case 'invite_offline':
           setNote('Ton ami n’est pas en ligne. Partage-lui le code ci-dessous.');
@@ -164,6 +180,15 @@ export default function OnlineMatchScreen() {
       liveSend({ type: 'join', code: String(params.join).toUpperCase() });
     }
   }, [phase, params.join]);
+
+  // Auto-create a private room when hosting from a chat (?host=1&conv=ID).
+  useEffect(() => {
+    if (phase === 'idle' && hostConvId && !hostStartedRef.current) {
+      hostStartedRef.current = true;
+      liveSend({ type: 'create', config: cfg() });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, hostConvId]);
 
   // Auto-spectate when arriving from a "live now" link (?spectate=CODE).
   useEffect(() => {

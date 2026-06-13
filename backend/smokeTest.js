@@ -117,6 +117,28 @@ async function main() {
   const unblk = await api('DELETE', '/social/block/' + idC, null, tokA);
   ok('déblocage', unblk.status === 200);
 
+  console.log('— chat —');
+  const conv = await api('POST', '/chat/conversations', { userId: idB }, tokA);
+  ok('crée conversation directe A↔B', conv.status === 201 && conv.json.id && !conv.json.isGroup, conv.json);
+  const convId = conv.json.id;
+  const dup = await api('POST', '/chat/conversations', { userId: idA }, tokB);
+  ok('réutilise la même conversation (dédup)', dup.status === 200 && dup.json.id === convId, dup.json);
+  const send1 = await api('POST', '/chat/conversations/' + convId + '/messages', { text: 'Salut !' }, tokA);
+  ok('A envoie un message', send1.status === 201 && send1.json.text === 'Salut !');
+  const msgs = await api('GET', '/chat/conversations/' + convId + '/messages', null, tokB);
+  ok('B lit le fil', msgs.status === 200 && msgs.json.length === 1 && msgs.json[0].senderId === idA);
+  const unreadB = await api('GET', '/chat/unread', null, tokB);
+  ok('B a 1 non-lu', unreadB.status === 200 && unreadB.json.unread === 1, unreadB.json);
+  await api('POST', '/chat/conversations/' + convId + '/read', null, tokB);
+  const unreadB2 = await api('GET', '/chat/unread', null, tokB);
+  ok('non-lus à 0 après lecture', unreadB2.status === 200 && unreadB2.json.unread === 0);
+  const grp = await api('POST', '/chat/conversations', { name: 'Les potes', memberIds: [idB] }, tokA);
+  ok('crée un groupe', grp.status === 201 && grp.json.isGroup && grp.json.members.length === 2, grp.json);
+  const inv = await api('POST', '/chat/conversations/' + grp.json.id + '/messages', { text: '', kind: 'match_invite', meta: { code: 'WXYZ' } }, tokA);
+  ok('poste une invitation de match', inv.status === 201 && inv.json.kind === 'match_invite' && inv.json.meta.code === 'WXYZ', inv.json);
+  const convList = await api('GET', '/chat/conversations', null, tokA);
+  ok('liste des conversations (2)', convList.status === 200 && convList.json.length === 2);
+
   console.log('— duel WebSocket (301, 1 leg) —');
   await wsDuel(tokA, tokB, idA, idB);
 

@@ -21,6 +21,7 @@ import {
   getEloHistory,
   blockUser,
   unblockUser,
+  openDirectConversation,
 } from '@/services/api';
 import { queryClient } from '@/services/queryClient';
 
@@ -76,6 +77,14 @@ export default function UserProfileScreen() {
     Haptics.selectionAsync();
     await unblockUser(id).catch(() => {});
     refreshAfterBlock();
+  };
+
+  const openChat = async () => {
+    Haptics.selectionAsync();
+    try {
+      const conv = await openDirectConversation(id);
+      router.push(`/chat/${conv.id}`);
+    } catch { /* bloqué / hors-ligne : silencieux */ }
   };
 
   const toggleFollow = async () => {
@@ -177,13 +186,22 @@ export default function UserProfileScreen() {
                   style={{ flex: 1 }}
                 />
               </View>
-              <OcheButton
-                label="🔴 Défier en direct"
-                onPress={() => router.push({ pathname: '/online-match', params: { invite: String(id), name: user.name } })}
-                variant="primary"
-                size="md"
-                fullWidth
-              />
+              <View style={styles.actions}>
+                <OcheButton
+                  label="💬 Message"
+                  onPress={openChat}
+                  variant="secondary"
+                  size="md"
+                  style={{ flex: 1 }}
+                />
+                <OcheButton
+                  label="🔴 Défier en direct"
+                  onPress={() => router.push({ pathname: '/online-match', params: { invite: String(id), name: user.name } })}
+                  variant="primary"
+                  size="md"
+                  style={{ flex: 1 }}
+                />
+              </View>
             </>
           )}
         </View>

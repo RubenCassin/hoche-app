@@ -460,4 +460,9 @@ function attachRealtime(server) {
   return wss;
 }
 
-module.exports = { attachRealtime, getOnlineUserIds, getLiveMatches };
+/** Pousse un message à plusieurs utilisateurs en ligne (chat temps réel). */
+function pushToUsers(userIds, msg) {
+  for (const id of userIds) sendToUser(id, msg);
+}
+
+module.exports = { attachRealtime, getOnlineUserIds, getLiveMatches, pushToUsers };

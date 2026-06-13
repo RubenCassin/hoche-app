@@ -139,6 +139,9 @@ export default function RootLayout() {
             <Stack.Screen name="user" />
             <Stack.Screen name="edit-profile" options={{ presentation: 'modal' }} />
             <Stack.Screen name="blocked" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="messages" />
+            <Stack.Screen name="chat" />
+            <Stack.Screen name="new-group" options={{ presentation: 'modal' }} />
             <Stack.Screen name="post" />
             <Stack.Screen name="follows" />
             <Stack.Screen name="notifications" />

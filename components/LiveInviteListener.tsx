@@ -7,6 +7,7 @@ import { OcheButton } from './OcheButton';
 import { Spacing, Radii, Shadows } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { onLive, liveSend } from '@/services/liveSocket';
+import { queryClient } from '@/services/queryClient';
 
 interface Invite {
   code: string;
@@ -25,6 +26,15 @@ export function LiveInviteListener() {
     () =>
       onLive((m: any) => {
         if (m.type === 'invited') setInv({ code: m.code, fromName: m.fromName, config: m.config || {} });
+        // Chat temps réel : rafraîchit les caches concernés à la réception.
+        if (m.type === 'chat_message') {
+          queryClient.invalidateQueries({ queryKey: ['chat-messages', m.conversationId] });
+          queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+          queryClient.invalidateQueries({ queryKey: ['chat-unread'] });
+        } else if (m.type === 'chat_read' || m.type === 'chat_member_added') {
+          queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+          queryClient.invalidateQueries({ queryKey: ['chat-unread'] });
+        }
       }),
     []
   );
