@@ -26,7 +26,7 @@ import { connectLive, onLive, liveSend, isLiveReady } from '@/services/liveSocke
 import { sendMessage } from '@/services/api';
 import { queryClient } from '@/services/queryClient';
 
-type Phase = 'connecting' | 'idle' | 'waiting' | 'playing';
+type Phase = 'connecting' | 'idle' | 'waiting' | 'lobby' | 'playing';
 interface GameState {
   you: number;
   spectator?: boolean;
@@ -38,6 +38,13 @@ interface GameState {
   winner: number | null;
   started: boolean;
   event: string | null;
+}
+interface LobbyState {
+  you: number;
+  code: string;
+  isHost: boolean;
+  names: string[];
+  maxPlayers: number;
 }
 interface ChatMsg { fromIdx: number; text: string }
 
@@ -78,7 +85,9 @@ export default function OnlineMatchScreen() {
   const [startScore, setStartScore] = useState(501);
   const [legsToWin, setLegsToWin] = useState(3);
   const [finishMode, setFinishMode] = useState<'simple' | 'double' | 'master'>('double');
-  const cfg = () => ({ startScore, legsToWin, finishMode });
+  const [maxPlayers, setMaxPlayers] = useState(2);
+  const cfg = (mp = maxPlayers) => ({ startScore, legsToWin, finishMode, maxPlayers: mp });
+  const [lobby, setLobby] = useState<LobbyState | null>(null);
 
   // Chat
   const [chat, setChat] = useState<ChatMsg[]>([]);
@@ -116,6 +125,12 @@ export default function OnlineMatchScreen() {
               })
               .catch(() => {});
           }
+          break;
+        case 'lobby':
+          setLobby({ you: m.you, code: m.code, isHost: m.isHost, names: m.names, maxPlayers: m.maxPlayers });
+          setCode(m.code);
+          inRoomRef.current = true;
+          setPhase('lobby');
           break;
         case 'invite_offline':
           setNote('Ton ami n’est pas en ligne. Partage-lui le code ci-dessous.');
@@ -181,14 +196,11 @@ export default function OnlineMatchScreen() {
     }
   }, [phase, params.join]);
 
-  // Auto-create a private room when hosting from a chat (?host=1&conv=ID).
-  useEffect(() => {
-    if (phase === 'idle' && hostConvId && !hostStartedRef.current) {
-      hostStartedRef.current = true;
-      liveSend({ type: 'create', config: cfg() });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, hostConvId]);
+  // Hôte depuis un chat : on NE crée pas automatiquement — l'hôte choisit le
+  // format + le nombre de joueurs sur l'écran, puis crée ; le code est posté
+  // dans la conversation à la réception de l'event 'room' (postedConvRef).
+  // (hostStartedRef conservé pour compat, plus utilisé.)
+  void hostStartedRef;
 
   // Auto-spectate when arriving from a "live now" link (?spectate=CODE).
   useEffect(() => {
@@ -281,17 +293,48 @@ export default function OnlineMatchScreen() {
         <OcheHeader title="En direct" left={back} bell={false} />
         <ScrollView contentContainerStyle={styles.lobby} keyboardShouldPersistTaps="handled">
           <OcheText variant="displaySm" allCaps color={C.cream} style={styles.lobbyTitle}>
-            {inviteId ? `Défier\n${inviteName}` : 'X01 en\ntemps réel'}
+            {inviteId ? `Défier\n${inviteName}` : hostConvId ? 'Match de\ngroupe' : 'X01 en\ntemps réel'}
           </OcheText>
 
           <FormatPickers />
 
           {inviteId ? (
-            <OcheButton label={`⚔️ Inviter ${inviteName}`} onPress={() => liveSend({ type: 'invite', toUserId: inviteId, toName: inviteName, config: cfg() })} variant="primary" size="lg" fullWidth />
+            <OcheButton label={`⚔️ Inviter ${inviteName}`} onPress={() => liveSend({ type: 'invite', toUserId: inviteId, toName: inviteName, config: cfg(2) })} variant="primary" size="lg" fullWidth />
           ) : (
             <>
-              <OcheButton label="⚡ Partie rapide" onPress={() => liveSend({ type: 'quick' })} variant="primary" size="lg" fullWidth />
-              <OcheButton label="Créer un salon privé" onPress={() => liveSend({ type: 'create', config: cfg() })} variant="amber" size="md" fullWidth />
+              {/* Nombre de joueurs (salon privé / match de groupe) */}
+              <View style={styles.format}>
+                <OcheText variant="labelSm" allCaps color={C.fg3}>Joueurs</OcheText>
+                <View style={styles.pillRow}>
+                  {[2, 3, 4, 5, 6].map((n) => (
+                    <Pressable key={n} onPress={() => setMaxPlayers(n)} style={[styles.pill, maxPlayers === n && styles.pillOn]}>
+                      <OcheText variant="labelMd" allCaps color={maxPlayers === n ? C.amber : C.fg2}>{n}</OcheText>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              {hostConvId ? (
+                <>
+                  <OcheButton
+                    label={maxPlayers > 2 ? `Créer la partie (${maxPlayers} joueurs)` : 'Créer le 1v1'}
+                    onPress={() => liveSend({ type: 'create', config: cfg() })}
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                  />
+                  <OcheText variant="bodyXS" color={C.fg3} style={styles.err}>
+                    L'invitation sera postée dans le groupe — {maxPlayers > 2 ? 'les membres rejoignent puis tu lances' : 'les 2 premiers qui rejoignent jouent'}.
+                  </OcheText>
+                </>
+              ) : (
+                <>
+                  {maxPlayers === 2 && (
+                    <OcheButton label="⚡ Partie rapide" onPress={() => liveSend({ type: 'quick' })} variant="primary" size="lg" fullWidth />
+                  )}
+                  <OcheButton label={maxPlayers > 2 ? `Créer un salon (${maxPlayers} joueurs)` : 'Créer un salon privé'} onPress={() => liveSend({ type: 'create', config: cfg() })} variant="amber" size="md" fullWidth />
+                </>
+              )}
               <View style={styles.joinRow}>
                 <TextInput
                   style={styles.joinInput}
@@ -330,6 +373,50 @@ export default function OnlineMatchScreen() {
     );
   }
 
+  // ── Lobby multi (salle 3-6, avant le coup d'envoi) ─────────────────────────
+  if (phase === 'lobby' && lobby) {
+    const full = lobby.names.length >= lobby.maxPlayers;
+    return (
+      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+        <OcheHeader title="Salon de groupe" left={back} bell={false} />
+        <View style={styles.lobbyWrap}>
+          <OcheText variant="labelMd" allCaps color={C.fg3}>Code du salon</OcheText>
+          <OcheText variant="displayLg" color={C.amber} style={styles.codeBig}>{lobby.code}</OcheText>
+          <OcheText variant="bodySm" color={C.fg3} style={{ marginBottom: Spacing.s2 }}>
+            {lobby.names.length}/{lobby.maxPlayers} joueurs
+          </OcheText>
+          <View style={styles.lobbyList}>
+            {lobby.names.map((n, i) => (
+              <View key={i} style={styles.lobbyRow}>
+                <MonogramPortrait name={n} size={32} />
+                <OcheText variant="h5" color={C.cream} numberOfLines={1} style={{ flex: 1 }}>
+                  {n}{i === lobby.you ? ' · toi' : ''}{i === 0 ? ' 👑' : ''}
+                </OcheText>
+              </View>
+            ))}
+          </View>
+          {lobby.isHost ? (
+            <OcheButton
+              label={lobby.names.length < 2 ? "En attente d'un 2e joueur…" : full ? 'Démarrer' : `Démarrer (${lobby.names.length} joueurs)`}
+              onPress={() => liveSend({ type: 'start' })}
+              variant="primary"
+              size="lg"
+              fullWidth
+              disabled={lobby.names.length < 2}
+              style={{ marginTop: Spacing.s4 }}
+            />
+          ) : (
+            <View style={styles.waitTurn}>
+              <ActivityIndicator color={C.fg3} />
+              <OcheText variant="labelMd" allCaps color={C.fg3}>En attente de l'hôte…</OcheText>
+            </View>
+          )}
+          <OcheButton label="Quitter" onPress={leave} variant="secondary" size="md" style={{ marginTop: Spacing.s2 }} />
+        </View>
+      </View>
+    );
+  }
+
   // ── Playing (or spectating) ───────────────────────────────────────────────
   if (!gs) return null;
   const isSpectator = !!gs.spectator;
@@ -340,8 +427,21 @@ export default function OnlineMatchScreen() {
   const isOver = gs.winner !== null;
   const iWon = gs.winner === me;
 
-  const Tile = ({ i }: { i: number }) => {
+  const multi = gs.names.length > 2;
+  const Tile = ({ i, compact }: { i: number; compact?: boolean }) => {
     const active = gs.turn === i && !isOver;
+    if (compact) {
+      return (
+        <View style={[styles.cTile, active && styles.tileActive]}>
+          {active && <View style={styles.activeBar} />}
+          <OcheText variant="bodyXS" color={active ? C.cream : C.fg2} numberOfLines={1}>
+            {gs.names[i]}{i === me ? ' · toi' : ''}
+          </OcheText>
+          <OcheText variant="displaySm" color={active ? C.amber : C.cream}>{gs.remaining[i]}</OcheText>
+          <OcheText variant="monoSm" color={C.fg3}>{gs.legs[i]} leg{gs.legs[i] > 1 ? 's' : ''}</OcheText>
+        </View>
+      );
+    }
     return (
       <View style={[styles.tile, active && styles.tileActive]}>
         {active && <View style={styles.activeBar} />}
@@ -368,8 +468,16 @@ export default function OnlineMatchScreen() {
       />
 
       <View style={styles.match}>
-        <Tile i={topIdx} />
-        <Tile i={botIdx} />
+        {multi ? (
+          <View style={styles.multiTiles}>
+            {gs.names.map((_, i) => <Tile key={i} i={i} compact />)}
+          </View>
+        ) : (
+          <>
+            <Tile i={topIdx} />
+            <Tile i={botIdx} />
+          </>
+        )}
 
         {gs.event && EVENT_LABEL[gs.event] && !isOver && (
           <View style={styles.eventBanner}>
@@ -404,8 +512,12 @@ export default function OnlineMatchScreen() {
             ) : (
               <OcheText variant="labelSm" allCaps color={iWon ? C.win : C.loss}>{iWon ? 'Victoire' : 'Défaite'}</OcheText>
             )}
-            <OcheText variant="displayMd" color={C.amber}>{gs.legs[topIdx]} — {gs.legs[botIdx]}</OcheText>
-            {!isSpectator && rematchOffer && !rematchSent && <OcheText variant="bodySm" color={C.amber}>{gs.names[botIdx]} veut rejouer !</OcheText>}
+            {multi ? (
+              <OcheText variant="displayMd" color={C.amber}>🏆 {gs.names[gs.winner ?? 0]}</OcheText>
+            ) : (
+              <OcheText variant="displayMd" color={C.amber}>{gs.legs[topIdx]} — {gs.legs[botIdx]}</OcheText>
+            )}
+            {!isSpectator && !multi && rematchOffer && !rematchSent && <OcheText variant="bodySm" color={C.amber}>{gs.names[botIdx]} veut rejouer !</OcheText>}
             {!isSpectator && rematchSent && <OcheText variant="bodySm" color={C.fg3}>En attente de l'adversaire…</OcheText>}
             <View style={styles.endActions}>
               {!isSpectator && <OcheButton label="Revanche" onPress={doRematch} variant="primary" size="md" disabled={rematchSent} />}
@@ -528,6 +640,18 @@ const makeStyles = (C: ReturnType<typeof useTheme>) =>
     activeBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 3, backgroundColor: C.amber },
     tileTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2 },
     remaining: { textAlign: 'right', letterSpacing: -1 },
+    multiTiles: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.s2 },
+    cTile: {
+      flexGrow: 1, flexBasis: '30%', minWidth: 96, alignItems: 'center', gap: 1,
+      backgroundColor: C.walnutUp, borderWidth: 1, borderColor: C.border1,
+      paddingVertical: Spacing.s2, paddingHorizontal: Spacing.s2, overflow: 'hidden',
+    },
+    lobbyWrap: { flex: 1, alignItems: 'center', paddingTop: Spacing.s6, paddingHorizontal: Spacing.s4 },
+    lobbyList: { alignSelf: 'stretch', gap: Spacing.s2, marginTop: Spacing.s2 },
+    lobbyRow: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.s3,
+      backgroundColor: C.walnutUp, borderWidth: 1, borderColor: C.border1, padding: Spacing.s2,
+    },
     eventBanner: { alignSelf: 'center', backgroundColor: C.amber, paddingHorizontal: Spacing.s3, paddingVertical: 4 },
     checkoutRow: { height: 40, justifyContent: 'center', paddingHorizontal: Spacing.s2 },
     pad: { flex: 1 },
