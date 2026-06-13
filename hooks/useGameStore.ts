@@ -172,6 +172,8 @@ interface GameStore {
   /** Current thrower index within each team. Aligned with the player arrays. */
   teamTurn: number[];
   activePlayerIndex: number;
+  /** False just after init until the starter is picked (bull-up / tirage). */
+  starterChosen: boolean;
   currentVisitDarts: DartEntry[];
   moment: Moment;
   matchWinnerIndex: number | null;
@@ -200,6 +202,8 @@ interface GameStore {
   rematch: () => void;
   setAppMode: (m: 'home' | 'bar') => void;
   clearMoment: () => void;
+  /** Set who throws first (index in the active roster) — closes the start picker. */
+  chooseStarter: (index: number) => void;
 
   // ── Cricket ──────────────────────────────────────────────────────────────
   initCricket: (
@@ -579,6 +583,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   teamMembers: [],
   teamTurn: [],
   activePlayerIndex: 0,
+  starterChosen: true,
   currentVisitDarts: [],
   moment: null,
   matchWinnerIndex: null,
@@ -615,6 +620,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       killerPlayers: [],
       shanghaiPlayers: [],
       activePlayerIndex: 0,
+      starterChosen: false,
       currentVisitDarts: [],
       moment: null,
       matchWinnerIndex: null,
@@ -927,6 +933,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setAppMode: (appMode) => set({ appMode }),
   clearMoment: () => set({ moment: null }),
 
+  chooseStarter: (index) => {
+    const n = get().players.length || get().cricketPlayers.length || get().atcPlayers.length
+      || get().killerPlayers.length || get().shanghaiPlayers.length || get().halvePlayers.length;
+    const i = n > 0 ? ((index % n) + n) % n : 0;
+    set({ activePlayerIndex: i, starterChosen: true });
+  },
+
   // ── Cricket ──────────────────────────────────────────────────────────────
 
   initCricket: (players, partial) => {
@@ -951,6 +964,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       killerPlayers: [],
       shanghaiPlayers: [],
       activePlayerIndex: 0,
+      starterChosen: false,
       currentVisitDarts: [],
       moment: null,
       matchWinnerIndex: null,
@@ -1040,6 +1054,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       killerPlayers: [],
       shanghaiPlayers: [],
       activePlayerIndex: 0,
+      starterChosen: false,
       currentVisitDarts: [],
       moment: null,
       matchWinnerIndex: null,
@@ -1136,6 +1151,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })),
       shanghaiPlayers: [],
       activePlayerIndex: 0,
+      starterChosen: false,
       currentVisitDarts: [],
       moment: null,
       matchWinnerIndex: null,
@@ -1241,6 +1257,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })),
       shanghaiRound: 1,
       activePlayerIndex: 0,
+      starterChosen: false,
       currentVisitDarts: [],
       moment: null,
       matchWinnerIndex: null,
@@ -1350,6 +1367,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })),
       halveRound: 0,
       activePlayerIndex: 0,
+      starterChosen: false,
       currentVisitDarts: [],
       moment: null,
       matchWinnerIndex: null,

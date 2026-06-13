@@ -27,6 +27,7 @@ import { ScoreModeToggle } from '@/components/ScoreModeToggle';
 import { CheckoutPill } from '@/components/CheckoutPill';
 import { MomentOverlay } from '@/components/MomentOverlay';
 import { EndGameOverlay } from '@/components/EndGameOverlay';
+import { StartDecider } from '@/components/StartDecider';
 import { submitGameResult } from '@/services/api';
 import { queryClient } from '@/services/queryClient';
 import { useAuthStore } from '@/hooks/useAuthStore';
@@ -82,6 +83,8 @@ export default function ScoringScreen() {
     teamMembers,
     teamTurn,
     activePlayerIndex,
+    starterChosen,
+    chooseStarter,
     currentVisitDarts,
     moment,
     matchWinnerIndex,
@@ -317,6 +320,7 @@ export default function ScoringScreen() {
   const BOT_DART_MS = 850;
   useEffect(() => {
     if (matchWinnerIndex !== null) return;
+    if (!starterChosen) return; // wait for the « who starts » pick
     if (moment !== null) return; // let the current celebration clear first
     const level = botLevels[activePlayerIndex];
     if (!level) return; // human / guest turn
@@ -375,7 +379,7 @@ export default function ScoringScreen() {
       timers.forEach(clearTimeout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePlayerIndex, moment, matchWinnerIndex]);
+  }, [activePlayerIndex, moment, matchWinnerIndex, starterChosen]);
 
   const dartsInVisit = currentVisitDarts.length;
   const visitTotal = currentVisitDarts.reduce((s, d) => s + d.points, 0);
@@ -972,6 +976,11 @@ export default function ScoringScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Pre-game « Qui commence ? » — only for local multiplayer, before any throw */}
+      {!starterChosen && scoreRoster.length >= 2 && !isGameOver && (
+        <StartDecider names={scoreRoster.map((p) => p.name)} onChoose={chooseStarter} />
+      )}
 
       {/* Celebration overlay — single instance, tap to dismiss */}
       <MomentOverlay
