@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
 const gamesRouter = require('./routes/games');
@@ -49,6 +51,19 @@ app.use('/chat', chatRouter);
 app.get('/health', function (req, res) {
   res.json({ status: 'ok', service: 'HOCHE Backend', version: '2.0.0' });
 });
+
+// ── App web (même codebase, exportée par `expo export -p web` → backend/web) ──
+// Sert le client web sur le même domaine que l'API : tes potes iPhone ouvrent
+// juste l'URL dans Safari. Les routes API ci-dessus matchent en premier ; tout
+// le reste (routes client expo-router) retombe sur index.html.
+const WEB_DIR = path.join(__dirname, 'web');
+if (fs.existsSync(path.join(WEB_DIR, 'index.html'))) {
+  app.use(express.static(WEB_DIR));
+  app.get('*', function (req, res, next) {
+    if (req.method !== 'GET' || req.path.startsWith('/ws')) return next();
+    res.sendFile(path.join(WEB_DIR, 'index.html'));
+  });
+}
 
 // Gestionnaire d'erreurs JSON — les routes async font next(e).
 app.use(function (err, req, res, next) {
