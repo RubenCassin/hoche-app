@@ -23,6 +23,7 @@ import {
   sendMessage,
   markConversationRead,
   getConversations,
+  createTournament,
   type ChatMessage,
 } from '@/services/api';
 import { queryClient } from '@/services/queryClient';
@@ -84,6 +85,18 @@ export default function ConversationScreen() {
   };
 
   const launchMatch = () => router.push(`/online-match?host=1&conv=${id}`);
+  const launchTournament = async () => {
+    try {
+      const t = await createTournament({
+        conversationId: id,
+        name: conv?.name ? `Tournoi ${conv.name}` : 'Tournoi',
+        startScore: 501,
+        legsToWin: 1,
+        finishMode: 'double',
+      });
+      router.push(`/tournament-online/${t.id}`);
+    } catch { /* silencieux */ }
+  };
 
   const back = (
     <Pressable onPress={() => router.back()} hitSlop={10}>
@@ -135,6 +148,16 @@ export default function ConversationScreen() {
                   </View>
                 );
               }
+              if (m.kind === 'tournament') {
+                const tid = (m.meta as { tournamentId?: number }).tournamentId;
+                return (
+                  <Pressable key={m.id} style={styles.tourCard} onPress={() => tid && router.push(`/tournament-online/${tid}`)}>
+                    <OcheText variant="labelSm" allCaps color={C.amber}>🏆 Tournoi</OcheText>
+                    <OcheText variant="bodyMd" color={C.cream}>{m.text}</OcheText>
+                    <OcheText variant="labelSm" allCaps color={C.amber}>Voir le bracket →</OcheText>
+                  </Pressable>
+                );
+              }
               return (
                 <View key={m.id} style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowTheirs]}>
                   <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
@@ -155,6 +178,11 @@ export default function ConversationScreen() {
           <Pressable onPress={launchMatch} hitSlop={8} style={styles.matchBtn}>
             <OcheText variant="h4" color={C.brick}>🎯</OcheText>
           </Pressable>
+          {conv?.isGroup && (
+            <Pressable onPress={launchTournament} hitSlop={8} style={styles.matchBtn}>
+              <OcheText variant="h4" color={C.amber}>🏆</OcheText>
+            </Pressable>
+          )}
           <TextInput
             style={styles.input}
             value={text}
@@ -193,6 +221,16 @@ const makeStyles = (C: ReturnType<typeof useTheme>) => StyleSheet.create({
     backgroundColor: C.walnutUp2,
     borderWidth: 1,
     borderColor: C.brick,
+    padding: Spacing.s4,
+    width: '88%',
+  },
+  tourCard: {
+    alignSelf: 'center',
+    alignItems: 'center',
+    gap: Spacing.s1,
+    backgroundColor: C.walnutUp2,
+    borderWidth: 1,
+    borderColor: C.amber,
     padding: Spacing.s4,
     width: '88%',
   },

@@ -439,7 +439,7 @@ export const getChallenges = () => api.get<Challenge[]>('/challenges').then((r) 
 
 // ─── Chat ────────────────────────────────────────────────────────────────────
 
-export type ChatMessageKind = 'text' | 'match_invite';
+export type ChatMessageKind = 'text' | 'match_invite' | 'tournament';
 
 export interface ChatMessage {
   id: number;
@@ -495,3 +495,48 @@ export const markConversationRead = (conversationId: number) =>
 
 export const addGroupMembers = (conversationId: number, memberIds: number[]) =>
   api.post<Conversation>(`/chat/conversations/${conversationId}/members`, { memberIds }).then((r) => r.data);
+
+// ─── Tournoi online ──────────────────────────────────────────────────────────
+
+export interface TournamentPlayer { userId: number; name: string | null; seed: number; place: number | null; }
+export interface TournamentMatch {
+  id: number;
+  round: number;
+  slot: number;
+  player1Id: number | null;
+  player1Name: string | null;
+  player2Id: number | null;
+  player2Name: string | null;
+  winnerId: number | null;
+  roomCode: string | null;
+  status: 'pending' | 'ready' | 'playing' | 'done';
+}
+export interface Tournament {
+  id: number;
+  conversationId: number | null;
+  name: string;
+  status: 'lobby' | 'running' | 'done';
+  createdById: number;
+  config: { startScore: number; legsToWin: number; finishMode: 'simple' | 'double' | 'master' };
+  winnerId: number | null;
+  winnerName: string | null;
+  players: TournamentPlayer[];
+  matches: TournamentMatch[];
+}
+
+export const createTournament = (input: {
+  conversationId?: number;
+  name: string;
+  startScore: number;
+  legsToWin: number;
+  finishMode: 'simple' | 'double' | 'master';
+}) => api.post<Tournament>('/tournaments', input).then((r) => r.data);
+
+export const getTournament = (id: number) =>
+  api.get<Tournament>(`/tournaments/${id}`).then((r) => r.data);
+
+export const joinTournament = (id: number) =>
+  api.post<Tournament>(`/tournaments/${id}/join`).then((r) => r.data);
+
+export const startTournament = (id: number) =>
+  api.post<Tournament>(`/tournaments/${id}/start`).then((r) => r.data);

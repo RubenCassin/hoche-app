@@ -63,7 +63,8 @@ export default function OnlineMatchScreen() {
   const C = useTheme();
   const styles = makeStyles(C);
   const token = useAuthStore((s) => s.token);
-  const params = useLocalSearchParams<{ join?: string; invite?: string; name?: string; spectate?: string; host?: string; conv?: string }>();
+  const params = useLocalSearchParams<{ join?: string; invite?: string; name?: string; spectate?: string; host?: string; conv?: string; tmatch?: string }>();
+  const tmatchId = params.tmatch ? Number(params.tmatch) : null;
   const inviteId = params.invite ? Number(params.invite) : null;
   const inviteName = params.name || 'ton ami';
   // Lancé depuis un chat : on crée un salon et on poste le code dans la conversation.
@@ -209,6 +210,14 @@ export default function OnlineMatchScreen() {
       liveSend({ type: 'spectate', code: String(params.spectate).toUpperCase() });
     }
   }, [phase, params.spectate]);
+
+  // Rejoindre un match de tournoi (?tmatch=ID) — 1er crée le salon, 2e rejoint.
+  useEffect(() => {
+    if (phase === 'idle' && tmatchId && !sentJoinRef.current) {
+      sentJoinRef.current = true;
+      liveSend({ type: 'join_tournament_match', matchId: tmatchId });
+    }
+  }, [phase, tmatchId]);
 
   const leave = () => { liveSend({ type: 'leave' }); router.back(); };
   const submitVisit = (total: number) => liveSend({ type: 'visit', total });

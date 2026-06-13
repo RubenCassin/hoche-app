@@ -26,6 +26,7 @@ function shortTime(iso: string): string {
 function preview(c: Conversation): string {
   if (!c.lastMessage) return 'Nouvelle conversation';
   if (c.lastMessage.kind === 'match_invite') return '🎯 Invitation à un match';
+  if (c.lastMessage.kind === 'tournament') return '🏆 Tournoi';
   return c.lastMessage.text;
 }
 
