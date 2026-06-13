@@ -10,9 +10,9 @@ node_modules/
 .expo/
 dist/
 web-build/
-# Export web généré (re-créé par `expo export -p web --output-dir backend/web` ;
-# uploadé sur Railway via .railwayignore, donc inutile de le versionner)
-backend/web/
+# NB : backend/web/ (export web servi par le backend) EST versionné — `railway up`
+# respecte .gitignore, donc l'ignorer le retire du déploiement. Re-générer avant
+# de committer : expo export -p web --output-dir backend/web
 
 # Native
 *.orig.*
