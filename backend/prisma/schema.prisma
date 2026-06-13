@@ -200,11 +200,52 @@ model ChatMessage {
   conversationId Int
   senderId       Int
   text           String
-  kind           String   @default("text") // text | match_invite
-  meta           String   @default("{}")   // JSON (ex. { code: "ABCD" } pour match_invite)
+  kind           String   @default("text") // text | match_invite | tournament
+  meta           String   @default("{}")   // JSON (ex. { code } pour match_invite, { tournamentId } pour tournament)
   createdAt      DateTime @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
+}
+
+// ── Tournoi online (bracket à élimination directe, lancé depuis un groupe) ────
+model Tournament {
+  id             Int      @id @default(autoincrement())
+  conversationId Int?     // groupe d'où il est lancé (pour le récap)
+  name           String
+  createdById    Int
+  status         String   @default("lobby") // lobby | running | done
+  startScore     Int      @default(501)
+  legsToWin      Int      @default(1)
+  finishMode     String   @default("double")
+  winnerId       Int?
+  createdAt      DateTime @default(now())
+  players        TournamentPlayer[]
+  matches        TournamentMatch[]
+}
+
+model TournamentPlayer {
+  tournamentId Int
+  userId       Int
+  seed         Int        @default(0)
+  place        Int?       // 1 = vainqueur, sinon tour d'élimination
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@id([tournamentId, userId])
+}
+
+model TournamentMatch {
+  id           Int        @id @default(autoincrement())
+  tournamentId Int
+  round        Int        // 0 = premier tour
+  slot         Int        // position dans le tour
+  player1Id    Int?
+  player2Id    Int?
+  winnerId     Int?
+  roomCode     String?    // salon live rattaché (quand joué)
+  status       String     @default("pending") // pending | ready | playing | done
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId, round])
 }

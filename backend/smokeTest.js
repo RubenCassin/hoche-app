@@ -146,6 +146,36 @@ async function main() {
   const eloBefore = (await api('GET', '/users/' + idA, null, tokB)).json.elo;
   await ws3(tokA, tokB, tokC, idA, eloBefore);
 
+  console.log('— tournoi de groupe (3 joueurs, bye) —');
+  // Groupe avec A, B, C pour le récap.
+  const tg = await api('POST', '/chat/conversations', { name: 'Tournoi potes', memberIds: [idB, idC] }, tokA);
+  const tConv = tg.json.id;
+  const tc = await api('POST', '/tournaments', { conversationId: tConv, name: 'Coupe test', startScore: 301, legsToWin: 1, finishMode: 'simple' }, tokA);
+  ok('création tournoi (A inscrit)', tc.status === 201 && tc.json.players.length === 1, tc.json);
+  const tId = tc.json.id;
+  await api('POST', '/tournaments/' + tId + '/join', null, tokB);
+  const jC = await api('POST', '/tournaments/' + tId + '/join', null, tokC);
+  ok('B et C rejoignent (3 joueurs)', jC.status === 200 && jC.json.players.length === 3, jC.json);
+  const started = await api('POST', '/tournaments/' + tId + '/start', null, tokA);
+  const r0 = started.json.matches.filter((m) => m.round === 0);
+  const byeDone = r0.filter((m) => m.status === 'done').length;
+  ok('bracket monté (2 matchs r0, 1 bye résolu)', started.status === 200 && r0.length === 2 && byeDone === 1, started.json.matches);
+  // Le match jouable du tour 0 (A vs C).
+  const m0 = r0.find((m) => m.status === 'ready');
+  ok('match r0 prêt avec 2 joueurs', !!m0 && !!m0.player1Id && !!m0.player2Id, m0);
+  // Joue le match r0 : player1 gagne.
+  await wsTournamentMatch(tId, m0.id, m0.player1Id, [tokA, tokB, tokC], [idA, idB, idC]);
+  // Le bracket a dû avancer → la finale devient prête.
+  let st = (await api('GET', '/tournaments/' + tId, null, tokA)).json;
+  const finalM = st.matches.find((m) => m.round === 1);
+  ok('finale prête après le match r0', finalM && finalM.status === 'ready' && finalM.player1Id && finalM.player2Id, finalM);
+  // Joue la finale.
+  await wsTournamentMatch(tId, finalM.id, finalM.player1Id, [tokA, tokB, tokC], [idA, idB, idC]);
+  st = (await api('GET', '/tournaments/' + tId, null, tokA)).json;
+  ok('tournoi terminé avec un champion', st.status === 'done' && st.winnerId === finalM.player1Id, { status: st.status, winner: st.winnerId });
+  const recap = await api('GET', '/chat/conversations/' + tConv + '/messages', null, tokA);
+  ok('récap posté dans le chat du groupe', recap.json.some((m) => m.kind === 'tournament' && /termin/.test(m.text)), recap.json.map((m) => m.kind));
+
   console.log('— suppression de compte —');
   const del = await api('DELETE', '/auth/me', { password: 'carl1234' }, tokC);
   ok('DELETE /auth/me (C)', del.status === 200);
@@ -286,6 +316,47 @@ function ws3(tokA, tokB, tokC, idA, eloBefore) {
     b.on('message', function (raw) { const m = JSON.parse(raw); if (m.type === 'state' && m.event !== 'win') playOnTurn(b, m, false); });
     c.on('message', function (raw) { const m = JSON.parse(raw); if (m.type === 'state' && m.event !== 'win') playOnTurn(c, m, false); });
     [a, b, c].forEach((w, i) => w.on('error', function (e) { ok('ws 3j #' + i + ' sans erreur', false, String(e)); cleanup(); }));
+  });
+}
+
+// Joue un match de tournoi via WS : les 2 joueurs concernés rejoignent
+// (join_tournament_match), le `winnerId` gagne (ferme 301 en simple), l'autre
+// marque peu. Résout quand le match est terminé côté serveur.
+function wsTournamentMatch(tournamentId, matchId, winnerId, toks, ids) {
+  return new Promise(function (resolve) {
+    const url = BASE.replace('http', 'ws') + '/ws?token=';
+    // Sockets seulement pour les 2 joueurs du match.
+    const idxW = ids.indexOf(winnerId);
+    // On déduit les 2 joueurs depuis l'état du match : on ouvre tous les sockets
+    // utiles et chacun tente de rejoindre ; le serveur ignore les non-concernés.
+    const sockets = toks.map((t) => ({ ws: new WebSocket(url + t), tok: t, id: ids[toks.indexOf(t)] }));
+    let done = false;
+    const timer = setTimeout(function () { if (!done) { ok('match tournoi terminé (timeout!)', false, { matchId }); finish(); } }, 15000);
+
+    function finish() {
+      done = true;
+      clearTimeout(timer);
+      sockets.forEach((s) => { try { s.ws.close(); } catch (e) {} });
+      setTimeout(resolve, 500);
+    }
+
+    sockets.forEach(function (s) {
+      s.ws.on('open', function () {
+        s.ws.send(JSON.stringify({ type: 'join_tournament_match', matchId: matchId }));
+      });
+      s.ws.on('message', function (raw) {
+        const m = JSON.parse(raw);
+        if (m.type === 'state') {
+          if (m.event === 'win') { if (!done) { ok('match tournoi #' + matchId + ' gagné', true); finish(); } return; }
+          if (m.started && m.turn === m.you) {
+            const rem = m.remaining[m.you];
+            const total = s.id === winnerId ? (rem <= 180 ? rem : 140) : 3;
+            s.ws.send(JSON.stringify({ type: 'visit', total: total }));
+          }
+        }
+      });
+      s.ws.on('error', function () {});
+    });
   });
 }
 

@@ -14,6 +14,7 @@ const postsRouter = require('./routes/posts');
 const challengesRouter = require('./routes/challenges');
 const notificationsRouter = require('./routes/notifications');
 const chatRouter = require('./routes/chat');
+const tournamentsRouter = require('./routes/tournaments');
 const { ensureAdmin } = require('./seed');
 const { attachRealtime } = require('./realtime');
 
@@ -47,6 +48,7 @@ app.use('/posts', postsRouter);
 app.use('/challenges', challengesRouter);
 app.use('/notifications', notificationsRouter);
 app.use('/chat', chatRouter);
+app.use('/tournaments', tournamentsRouter);
 
 app.get('/health', function (req, res) {
   res.json({ status: 'ok', service: 'HOCHE Backend', version: '2.0.0' });

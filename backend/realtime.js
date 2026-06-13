@@ -8,6 +8,7 @@ const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('./auth');
 const { prisma, jstr } = require('./db/prisma');
+const { advance: advanceTournament } = require('./tournament');
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars
 
@@ -15,6 +16,8 @@ const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars
 const rooms = new Map();
 /** Presence: userId -> Set<ws> (a user may have the app open in >1 place). */
 const clients = new Map();
+/** Réservation de salon par match de tournoi : matchId -> code (anti-course). */
+const matchHosts = new Map();
 
 function send(ws, msg) {
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
@@ -243,6 +246,12 @@ async function recordMatch(room) {
       const lUser = room.players[1 - s.winner];
       if (wUser && lUser) room.eloApplied = await eloApply(wUser.userId, lUser.userId, ids);
     }
+
+    // Match de tournoi : fait avancer le bracket avec le vainqueur.
+    if (room.tournamentMatchId) {
+      const wUser = room.players[s.winner];
+      if (wUser) await advanceTournament(room.tournamentMatchId, wUser.userId);
+    }
   } catch (e) {
     // best-effort
   }
@@ -255,6 +264,7 @@ function leaveRoom(ws) {
   ws.roomCode = null;
   if (!room) return;
   // Un départ termine la salle pour tout le monde (v1 — pas de reprise à chaud).
+  if (room.tournamentMatchId) matchHosts.delete(room.tournamentMatchId);
   const others = room.players.filter((p) => p.ws !== ws);
   (room.spectators || []).forEach((w) => { w.specCode = null; send(w, { type: 'opponent_left' }); });
   rooms.delete(code);
@@ -354,6 +364,66 @@ function handleMessage(ws, raw) {
     // 1v1 (ou salle pleine) : démarrage auto. Multi : lobby jusqu'au start de l'hôte.
     if (cap === 2 || room.players.length >= cap) startGame(room);
     else broadcastLobby(room);
+    return;
+  }
+
+  // Match de tournoi : les 2 joueurs du match rejoignent un salon dédié.
+  // Le 1er arrivé crée le salon (tagué tournamentMatchId), le 2e le rejoint
+  // → startGame. Sur victoire, recordMatch fait avancer le bracket.
+  if (type === 'join_tournament_match') {
+    const matchId = Number(msg.matchId);
+    (async function () {
+      const match = await prisma.tournamentMatch.findUnique({ where: { id: matchId } });
+      if (!match || match.status === 'done') return send(ws, { type: 'error', error: 'Match indisponible' });
+      if (ws.userId !== match.player1Id && ws.userId !== match.player2Id)
+        return send(ws, { type: 'error', error: "Ce n'est pas ton match" });
+      if (!match.player1Id || !match.player2Id)
+        return send(ws, { type: 'error', error: 'Adversaire pas encore connu' });
+
+      const t = await prisma.tournament.findUnique({ where: { id: match.tournamentId } });
+      const cfg = sanitizeConfig({
+        startScore: t ? t.startScore : 501,
+        legsToWin: t ? t.legsToWin : 1,
+        finishMode: t ? t.finishMode : 'double',
+        maxPlayers: 2,
+      });
+
+      // ── Section synchrone (aucun await) : évite la course de création ──
+      // matchHosts réserve le code dès le 1er arrivant ; le 2e rejoint.
+      let entry = matchHosts.get(matchId);
+      let room = entry ? rooms.get(entry) : null;
+
+      if (room) {
+        if (room.players.some((p) => p.userId === ws.userId)) return; // déjà dedans
+        if (room.players.length >= 2 || room.state.started)
+          return send(ws, { type: 'error', error: 'Match déjà en cours' });
+        if (ws.roomCode) leaveRoom(ws);
+        leaveSpectate(ws);
+        room.players.push({ userId: ws.userId, name: ws.userName, ws: ws });
+        ws.roomCode = room.code;
+        startGame(room);
+        return;
+      }
+      if (entry && !room) {
+        // Code réservé mais salon pas encore prêt (hôte en cours) — réessaie.
+        return send(ws, { type: 'error', error: 'Connexion au match… réessaie' });
+      }
+
+      // Je suis l'hôte : réserve + crée le salon de façon synchrone.
+      if (ws.roomCode) leaveRoom(ws);
+      leaveSpectate(ws);
+      const code = makeCode();
+      matchHosts.set(matchId, code);
+      room = {
+        code, quick: false, configChoice: cfg, invitedUserId: null, spectators: [],
+        tournamentMatchId: matchId,
+        players: [{ userId: ws.userId, name: ws.userName, ws: ws }], state: freshState(cfg, 2),
+      };
+      rooms.set(code, room);
+      ws.roomCode = code;
+      send(ws, { type: 'room', code, you: 0, config: cfg, tournament: true });
+      prisma.tournamentMatch.update({ where: { id: matchId }, data: { roomCode: code, status: 'playing' } }).catch(() => {});
+    })().catch(function () { send(ws, { type: 'error', error: 'Erreur tournoi' }); });
     return;
   }
 
