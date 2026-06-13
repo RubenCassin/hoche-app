@@ -19,6 +19,10 @@ import { getStats, getFollowCounts } from '@/services/api';
 import { detectAndSyncLocation } from '@/services/locationService';
 import { queryClient } from '@/services/queryClient';
 import { soundsEnabled, setSoundsEnabled } from '@/services/soundService';
+import { useFavoritesStore } from '@/hooks/useFavoritesStore';
+
+const DOUBLE_SEGMENTS = [...Array.from({ length: 20 }, (_, i) => i + 1), 25];
+const doubleLabel = (seg: number) => (seg === 25 ? 'Bull' : `D${seg}`);
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -59,6 +63,9 @@ export default function ProfileScreen() {
     setSounds(v);
     setSoundsEnabled(v);
   };
+
+  const favoriteDoubles = useFavoritesStore((s) => s.favoriteDoubles);
+  const toggleFavorite = useFavoritesStore((s) => s.toggle);
 
   const { data: stats } = useQuery({
     queryKey: ['stats', user?.id],
@@ -335,6 +342,28 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Doubles préférés — personnalisent les suggestions de checkout */}
+        <View style={styles.favCard}>
+          <OcheText variant="h5" allCaps color={C.fg2} style={styles.favTitle}>Mes doubles préférés</OcheText>
+          <OcheText variant="bodyXS" color={C.fg3}>
+            Choisis les doubles que tu réussis le mieux : en partie, on te proposera des finitions qui visent ces doubles-là.
+          </OcheText>
+          <View style={styles.favGrid}>
+            {DOUBLE_SEGMENTS.map((seg) => {
+              const on = favoriteDoubles.includes(seg);
+              return (
+                <Pressable
+                  key={seg}
+                  onPress={() => toggleFavorite(seg)}
+                  style={[styles.favChip, on && styles.favChipOn]}
+                >
+                  <OcheText variant="labelSm" allCaps color={on ? C.onAmber : C.fg2}>{doubleLabel(seg)}</OcheText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
         {/* Compte */}
         <OcheButton
           label="Modifier le profil"
@@ -455,4 +484,24 @@ const makeStyles = (C: ReturnType<typeof useTheme>) => StyleSheet.create({
   },
   segBtn: { paddingHorizontal: 14, paddingVertical: 6 },
   segBtnActive: { backgroundColor: C.amber },
+  favCard: {
+    backgroundColor: C.walnutUp,
+    borderWidth: 1,
+    borderColor: C.border1,
+    padding: Spacing.s4,
+    gap: Spacing.s2,
+    marginTop: Spacing.s2,
+  },
+  favTitle: { letterSpacing: 1 },
+  favGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.s2, marginTop: Spacing.s1 },
+  favChip: {
+    paddingHorizontal: Spacing.s3,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: C.border1,
+    backgroundColor: C.walnutUp2,
+    minWidth: 44,
+    alignItems: 'center',
+  },
+  favChipOn: { backgroundColor: C.amber, borderColor: C.amber },
 });

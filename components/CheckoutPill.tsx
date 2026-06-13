@@ -3,7 +3,13 @@ import { View, StyleSheet } from 'react-native';
 import { OcheText } from './OcheText';
 import { Radii, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
+import { useFavoritesStore } from '@/hooks/useFavoritesStore';
 import type { FinishMode } from '@/hooks/useGameStore';
+
+/** Libellé du double favori → la fléchette finale correspondante (D16, Bull…). */
+function favLabel(seg: number): string {
+  return seg === 25 ? 'Bull' : `D${seg}`;
+}
 
 // Canonical pro routes for the famous high finishes (double-out). Used as a
 // preferred override; everything else is computed by `solveCheckout` below so
@@ -160,9 +166,17 @@ const ODD_DOUBLES_DESC = DOUBLES.filter((d) => (d.value / 2) % 2 === 1).reverse(
 const TRIPLES_DESC = [...TRIPLES].reverse();
 const SINGLES_DESC = [...SINGLES].reverse();
 
-/** Ordered list of valid finishing darts for the mode (nicest first). */
-function finisherList(mode: FinishMode): Dart[] {
-  const doubleFinishers = [...EVEN_DOUBLES_DESC, BULL50, ...ODD_DOUBLES_DESC];
+/** Ordered list of valid finishing darts for the mode (nicest first).
+ *  Si `favValues` (valeurs des doubles favoris) est fourni, ces finitions
+ *  passent en tête → le solveur finit dessus quand c'est possible au même
+ *  nombre de fléchettes (jamais plus). */
+function finisherList(mode: FinishMode, favValues?: Set<number>): Dart[] {
+  let doubleFinishers = [...EVEN_DOUBLES_DESC, BULL50, ...ODD_DOUBLES_DESC];
+  if (favValues && favValues.size) {
+    const fav = doubleFinishers.filter((d) => favValues.has(d.value));
+    const rest = doubleFinishers.filter((d) => !favValues.has(d.value));
+    doubleFinishers = [...fav, ...rest];
+  }
   switch (mode) {
     case 'double':
       return doubleFinishers;
@@ -177,11 +191,11 @@ function finisherList(mode: FinishMode): Dart[] {
 const FIRST_DART_ORDER: Dart[] = [...TRIPLES_DESC, BULL50, BULL25, ...SINGLES_DESC];
 
 /** Minimal-dart checkout for `remaining` within `dartsLeft`, or null. */
-function solveCheckout(remaining: number, dartsLeft: number, mode: FinishMode): string[] | null {
+function solveCheckout(remaining: number, dartsLeft: number, mode: FinishMode, favValues?: Set<number>): string[] | null {
   const minFinish = mode === 'simple' ? 1 : 2;
   if (remaining < minFinish || remaining > 170) return null;
 
-  const finishers = finisherList(mode);
+  const finishers = finisherList(mode, favValues);
 
   // 1 dart
   for (const f of finishers) if (f.value === remaining) return [f.label];
@@ -216,20 +230,28 @@ interface CheckoutPillProps {
 function getCheckout(
   remaining: number,
   dartsLeft: number = 3,
-  finishMode: FinishMode = 'double'
+  finishMode: FinishMode = 'double',
+  favValues?: Set<number>
 ): string[] | null {
-  // Prefer the canonical curated route for double-out high finishes.
-  if (finishMode === 'double') {
+  // Avec des doubles favoris, on laisse le solveur biaisé router vers eux.
+  // Sinon, on garde les routes pro canoniques pour le double-out.
+  if (finishMode === 'double' && (!favValues || favValues.size === 0)) {
     const curated = CHECKOUTS[remaining];
     if (curated && curated.length <= dartsLeft) return curated;
   }
-  return solveCheckout(remaining, dartsLeft, finishMode);
+  return solveCheckout(remaining, dartsLeft, finishMode, favValues);
 }
 
 export function CheckoutPill({ remaining, dartsLeft = 3, finishMode = 'double' }: CheckoutPillProps) {
   const C = useTheme();
   const styles = makeStyles(C);
-  const checkout = getCheckout(remaining, dartsLeft, finishMode);
+  const favoriteDoubles = useFavoritesStore((s) => s.favoriteDoubles);
+  const favValues = React.useMemo(
+    () => new Set(favoriteDoubles.map((seg) => (seg === 25 ? 50 : seg * 2))),
+    [favoriteDoubles]
+  );
+  const favLabels = React.useMemo(() => new Set(favoriteDoubles.map(favLabel)), [favoriteDoubles]);
+  const checkout = getCheckout(remaining, dartsLeft, finishMode, favValues);
   if (!checkout) return null;
 
   return (
@@ -241,6 +263,7 @@ export function CheckoutPill({ remaining, dartsLeft = 3, finishMode = 'double' }
         {checkout.map((segment, i) => {
           const isDouble = segment.startsWith('D') || segment === 'Bull';
           const isTriple = segment.startsWith('T');
+          const isFav = isDouble && favLabels.has(segment);
           return (
             <View
               key={i}
@@ -248,15 +271,16 @@ export function CheckoutPill({ remaining, dartsLeft = 3, finishMode = 'double' }
                 styles.pill,
                 isDouble && styles.pillDouble,
                 isTriple && styles.pillTriple,
+                isFav && styles.pillFav,
               ]}
             >
               <OcheText
                 variant="labelMd"
                 allCaps
-                color={isDouble ? C.amber : isTriple ? C.brick : C.cream}
+                color={isFav ? C.onAmber : isDouble ? C.amber : isTriple ? C.brick : C.cream}
                 style={styles.pillText}
               >
-                {segment}
+                {isFav ? `★ ${segment}` : segment}
               </OcheText>
             </View>
           );
@@ -289,6 +313,10 @@ const makeStyles = (C: ReturnType<typeof useTheme>) => StyleSheet.create({
     borderColor: C.border1,
   },
   pillDouble: {
+    borderColor: C.amber,
+  },
+  pillFav: {
+    backgroundColor: C.amber,
     borderColor: C.amber,
   },
   pillTriple: {
