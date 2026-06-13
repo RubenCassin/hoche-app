@@ -38,21 +38,24 @@ function makeCode() {
 
 function sanitizeConfig(cfg) {
   cfg = cfg || {};
+  const mp = parseInt(cfg.maxPlayers, 10);
   return {
     startScore: [301, 501, 701].indexOf(cfg.startScore) >= 0 ? cfg.startScore : 501,
     legsToWin: [1, 3, 5].indexOf(cfg.legsToWin) >= 0 ? cfg.legsToWin : 3,
     finishMode: ['simple', 'double', 'master'].indexOf(cfg.finishMode) >= 0 ? cfg.finishMode : 'double',
+    maxPlayers: mp >= 2 && mp <= 6 ? mp : 2,
   };
 }
 
-function freshState(config) {
+function freshState(config, n) {
+  const fill = (v) => Array.from({ length: n }, () => v);
   return {
     started: false,
     config: config,
-    remaining: [config.startScore, config.startScore],
-    legs: [0, 0],
-    dartsThrown: [0, 0],
-    visits: [[], []],
+    remaining: fill(config.startScore),
+    legs: fill(0),
+    dartsThrown: fill(0),
+    visits: Array.from({ length: n }, () => []),
     turn: 0,
     starter: 0,
     winner: null,
@@ -75,6 +78,22 @@ function stateMsg(room, youIdx, event) {
     event: event || null,
   };
 }
+
+/** Lobby (salle multi pas encore démarrée) — qui a rejoint + si je suis l'hôte. */
+function lobbyMsg(room, youIdx) {
+  return {
+    type: 'lobby',
+    you: youIdx,
+    code: room.code,
+    isHost: youIdx === 0,
+    names: room.players.map((p) => p.name),
+    maxPlayers: room.configChoice.maxPlayers,
+    config: room.configChoice,
+  };
+}
+function broadcastLobby(room) {
+  room.players.forEach((p, i) => send(p.ws, lobbyMsg(room, i)));
+}
 function broadcastState(room, event) {
   room.players.forEach((p, i) => send(p.ws, stateMsg(room, i, event)));
   (room.spectators || []).forEach((w) => send(w, stateMsg(room, -1, event)));
@@ -88,7 +107,7 @@ function getOnlineUserIds() {
 function getLiveMatches() {
   const out = [];
   for (const room of rooms.values()) {
-    if (room.state.started && room.players.length === 2 && room.state.winner === null) {
+    if (room.state.started && room.players.length >= 2 && room.state.winner === null) {
       out.push({
         code: room.code,
         names: room.players.map((p) => p.name),
@@ -102,9 +121,10 @@ function getLiveMatches() {
 }
 
 function startGame(room) {
-  room.state = freshState(room.configChoice);
+  const n = room.players.length;
+  room.state = freshState(room.configChoice, n);
   room.state.started = true;
-  room.rematchVotes = [false, false];
+  room.rematchVotes = room.players.map(() => false);
   broadcastState(room, 'start');
 }
 
@@ -130,6 +150,8 @@ function applyVisit(room, playerIdx, totalRaw) {
   // 'score' = valid but unremarkable visit — still broadcast, just no banner.
   let event = bust ? 'bust' : total === 180 ? '180' : 'score';
 
+  const n = s.remaining.length;
+
   if (checkout) {
     s.legs[playerIdx] += 1;
     event = 'leg';
@@ -139,13 +161,14 @@ function applyVisit(room, playerIdx, totalRaw) {
       recordMatch(room);
       return event;
     }
-    s.remaining = [s.config.startScore, s.config.startScore];
-    s.starter = 1 - s.starter;
+    // Nouveau leg : on remet tout le monde à zéro, le départ tourne.
+    s.remaining = Array.from({ length: n }, () => s.config.startScore);
+    s.starter = (s.starter + 1) % n;
     s.turn = s.starter;
     return event;
   }
 
-  s.turn = 1 - s.turn;
+  s.turn = (s.turn + 1) % n;
   return event;
 }
 
@@ -173,7 +196,8 @@ async function eloApply(winnerId, loserId, gameIds) {
 async function recordMatch(room) {
   try {
     const s = room.state;
-    const legsPlayed = s.legs[0] + s.legs[1];
+    const n = room.players.length;
+    const legsPlayed = s.legs.reduce((a, b) => a + b, 0);
     const avgOf = function (i) {
       const darts = s.dartsThrown[i] || 0;
       const totals = s.visits[i].filter((v) => !v.bust).reduce((sum, v) => sum + v.total, 0);
@@ -184,10 +208,10 @@ async function recordMatch(room) {
     const suspect = avgOf(s.winner) > 140;
 
     const ids = [];
-    for (const i of [0, 1]) {
+    for (let i = 0; i < n; i++) {
       const me = room.players[i];
-      const opp = room.players[1 - i];
-      if (!me || !opp) continue;
+      if (!me) continue;
+      const opps = room.players.filter((_, j) => j !== i);
       const g = await prisma.game.create({
         data: {
           userId: me.userId,
@@ -195,15 +219,15 @@ async function recordMatch(room) {
           matchWon: s.winner === i,
           legsWon: s.legs[i],
           legsPlayed: legsPlayed,
-          opponents: jstr([opp.name]),
-          opponentIds: jstr([opp.userId]),
+          opponents: jstr(opps.map((p) => p.name)),
+          opponentIds: jstr(opps.map((p) => p.userId)),
           dartsThrown: s.dartsThrown[i] || 0,
           avg: avgOf(i),
           total180s: s.visits[i].filter((v) => v.total === 180).length,
           startScore: s.config.startScore,
           visits: jstr(s.visits[i]),
           confirmed: true,
-          confirmedBy: jstr([opp.userId]),
+          confirmedBy: jstr(opps.map((p) => p.userId)),
           online: true,
           suspect: suspect,
         },
@@ -212,10 +236,12 @@ async function recordMatch(room) {
     }
     room.recordedGameIds = ids;
 
-    const wUser = room.players[s.winner];
-    const lUser = room.players[1 - s.winner];
-    if (!suspect && wUser && lUser) {
-      room.eloApplied = await eloApply(wUser.userId, lUser.userId, ids);
+    // Elo : seulement en 1v1 (le classement Elo est pensé pour le duel ;
+    // les parties multi 3+ comptent dans les stats/historique mais pas l'Elo).
+    if (n === 2 && !suspect) {
+      const wUser = room.players[s.winner];
+      const lUser = room.players[1 - s.winner];
+      if (wUser && lUser) room.eloApplied = await eloApply(wUser.userId, lUser.userId, ids);
     }
   } catch (e) {
     // best-effort
@@ -228,13 +254,14 @@ function leaveRoom(ws) {
   const room = rooms.get(code);
   ws.roomCode = null;
   if (!room) return;
-  const opponent = room.players.find((p) => p.ws !== ws);
+  // Un départ termine la salle pour tout le monde (v1 — pas de reprise à chaud).
+  const others = room.players.filter((p) => p.ws !== ws);
   (room.spectators || []).forEach((w) => { w.specCode = null; send(w, { type: 'opponent_left' }); });
   rooms.delete(code);
-  if (opponent) {
-    opponent.ws.roomCode = null;
-    send(opponent.ws, { type: 'opponent_left' });
-  }
+  others.forEach((p) => {
+    p.ws.roomCode = null;
+    send(p.ws, { type: 'opponent_left' });
+  });
 }
 
 /** Remove a spectator from whatever room they were watching. */
@@ -271,11 +298,13 @@ function handleMessage(ws, raw) {
     const code = makeCode();
     const room = {
       code: code, quick: type === 'quick', configChoice: cfg, invitedUserId: null, spectators: [],
-      players: [{ userId: ws.userId, name: ws.userName, ws: ws }], state: freshState(cfg),
+      players: [{ userId: ws.userId, name: ws.userName, ws: ws }], state: freshState(cfg, cfg.maxPlayers),
     };
     rooms.set(code, room);
     ws.roomCode = code;
     send(ws, { type: 'room', code: code, quick: room.quick, you: 0, config: cfg });
+    // Salle multi (3-6) : l'hôte attend dans un lobby et démarre quand il veut.
+    if (cfg.maxPlayers > 2) broadcastLobby(room);
     return;
   }
 
@@ -288,7 +317,7 @@ function handleMessage(ws, raw) {
     const code = makeCode();
     const room = {
       code: code, quick: false, configChoice: cfg, invitedUserId: toUserId, spectators: [],
-      players: [{ userId: ws.userId, name: ws.userName, ws: ws }], state: freshState(cfg),
+      players: [{ userId: ws.userId, name: ws.userName, ws: ws }], state: freshState(cfg, cfg.maxPlayers),
     };
     rooms.set(code, room);
     ws.roomCode = code;
@@ -313,14 +342,27 @@ function handleMessage(ws, raw) {
     const code = String(msg.code || '').toUpperCase().trim();
     const room = rooms.get(code);
     if (!room) return send(ws, { type: 'error', error: 'Salon introuvable' });
-    if (room.players.length >= 2 || room.state.started)
-      return send(ws, { type: 'error', error: 'Salon complet' });
-    if (room.players[0].userId === ws.userId)
+    const cap = room.configChoice.maxPlayers || 2;
+    if (room.state.started) return send(ws, { type: 'error', error: 'La partie a déjà commencé' });
+    if (room.players.length >= cap) return send(ws, { type: 'error', error: 'Salon complet' });
+    if (room.players.some((p) => p.userId === ws.userId))
       return send(ws, { type: 'error', error: 'Tu es déjà dans ce salon' });
-    if (room.invitedUserId && room.invitedUserId !== ws.userId)
+    if (room.invitedUserId && room.invitedUserId !== ws.userId && cap === 2)
       return send(ws, { type: 'error', error: 'Invitation réservée à un autre joueur' });
     room.players.push({ userId: ws.userId, name: ws.userName, ws: ws });
     ws.roomCode = code;
+    // 1v1 (ou salle pleine) : démarrage auto. Multi : lobby jusqu'au start de l'hôte.
+    if (cap === 2 || room.players.length >= cap) startGame(room);
+    else broadcastLobby(room);
+    return;
+  }
+
+  // Hôte d'une salle multi : démarre la partie (≥ 2 joueurs présents).
+  if (type === 'start') {
+    const room = rooms.get(ws.roomCode);
+    if (!room || room.state.started) return;
+    if (room.players[0].ws !== ws) return; // seul l'hôte démarre
+    if (room.players.length < 2) return send(ws, { type: 'error', error: 'Il faut au moins 2 joueurs' });
     startGame(room);
     return;
   }
@@ -376,10 +418,13 @@ function handleMessage(ws, raw) {
     const room = rooms.get(ws.roomCode);
     if (!room || room.players.length < 2 || room.state.winner === null) return;
     const idx = room.players.findIndex((p) => p.ws === ws);
-    room.rematchVotes = room.rematchVotes || [false, false];
+    if (idx < 0) return;
+    if (!room.rematchVotes || room.rematchVotes.length !== room.players.length) {
+      room.rematchVotes = room.players.map(() => false);
+    }
     room.rematchVotes[idx] = true;
-    if (room.rematchVotes[0] && room.rematchVotes[1]) startGame(room);
-    else send(room.players[1 - idx].ws, { type: 'rematch_offer' });
+    if (room.rematchVotes.every(Boolean)) startGame(room);
+    else room.players.forEach((p, i) => { if (i !== idx) send(p.ws, { type: 'rematch_offer' }); });
     return;
   }
 
@@ -425,7 +470,7 @@ function handleMessage(ws, raw) {
 function attachRealtime(server) {
   const wss = new WebSocket.Server({ server: server, path: '/ws' });
 
-  wss.on('connection', async function (ws, req) {
+  wss.on('connection', function (ws, req) {
     let userId = null;
     try {
       const url = new URL(req.url, 'http://localhost');
@@ -435,18 +480,18 @@ function attachRealtime(server) {
       send(ws, { type: 'error', error: 'Auth invalide' });
       return ws.close(4001, 'auth');
     }
-    const user = await prisma.user.findUnique({ where: { id: userId } }).catch(() => null);
-    if (!user) return ws.close(4001, 'auth');
 
+    // Le handler de messages est branché SYNCHRONE pour ne pas perdre un message
+    // (ex. 'create') envoyé juste après l'ouverture, pendant le chargement async
+    // du profil. Les messages reçus avant l'auth sont mis en file puis rejoués.
     ws.userId = userId;
-    ws.userName = user.name;
     ws.roomCode = null;
-    if (!clients.has(userId)) clients.set(userId, new Set());
-    clients.get(userId).add(ws);
-
-    send(ws, { type: 'connected' });
-
-    ws.on('message', function (raw) { handleMessage(ws, raw); });
+    let ready = false;
+    const queued = [];
+    ws.on('message', function (raw) {
+      if (ready) handleMessage(ws, raw);
+      else queued.push(raw);
+    });
     ws.on('close', function () {
       leaveRoom(ws);
       leaveSpectate(ws);
@@ -454,6 +499,19 @@ function attachRealtime(server) {
       if (set) { set.delete(ws); if (set.size === 0) clients.delete(userId); }
     });
     ws.on('error', function () { leaveRoom(ws); });
+
+    prisma.user.findUnique({ where: { id: userId } })
+      .then(function (user) {
+        if (!user) return ws.close(4001, 'auth');
+        ws.userName = user.name;
+        if (!clients.has(userId)) clients.set(userId, new Set());
+        clients.get(userId).add(ws);
+        ready = true;
+        send(ws, { type: 'connected' });
+        queued.forEach((raw) => handleMessage(ws, raw));
+        queued.length = 0;
+      })
+      .catch(function () { ws.close(4001, 'auth'); });
   });
 
   console.log('HOCHE realtime (WebSocket) ready on /ws');

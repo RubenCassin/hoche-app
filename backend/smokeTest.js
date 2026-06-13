@@ -142,6 +142,10 @@ async function main() {
   console.log('— duel WebSocket (301, 1 leg) —');
   await wsDuel(tokA, tokB, idA, idB);
 
+  console.log('— partie multi 3 joueurs (lobby + start hôte) —');
+  const eloBefore = (await api('GET', '/users/' + idA, null, tokB)).json.elo;
+  await ws3(tokA, tokB, tokC, idA, eloBefore);
+
   console.log('— suppression de compte —');
   const del = await api('DELETE', '/auth/me', { password: 'carl1234' }, tokC);
   ok('DELETE /auth/me (C)', del.status === 200);
@@ -217,6 +221,71 @@ function wsDuel(tokA, tokB, idA, idB) {
     });
     a.on('error', function (e) { ok('ws A sans erreur', false, String(e)); cleanup(); });
     b.on('error', function (e) { ok('ws B sans erreur', false, String(e)); cleanup(); });
+  });
+}
+
+// Partie à 3 joueurs : A crée une salle maxPlayers=3, B et C rejoignent (lobby),
+// A démarre, A ferme 101 d'un coup (finish simple) → gagne. Vérifie l'enregistrement
+// à 3 et que l'Elo (1v1 only) n'a PAS bougé.
+function ws3(tokA, tokB, tokC, idA, eloBefore) {
+  return new Promise(function (resolve) {
+    const url = BASE.replace('http', 'ws') + '/ws?token=';
+    const a = new WebSocket(url + tokA);
+    const b = new WebSocket(url + tokB);
+    const c = new WebSocket(url + tokC);
+    let code = null;
+    let joined = 0;
+    let lobbySeen = false;
+    let started = false;
+    const timer = setTimeout(function () { ok('partie 3j terminée (timeout!)', false); cleanup(); }, 15000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      [a, b, c].forEach((w) => { try { w.close(); } catch (e) {} });
+      setTimeout(async function () {
+        const gA = await api('GET', '/games', null, tokA);
+        const last = gA.json.filter((g) => g.online).sort((x, y) => y.id - x.id)[0];
+        ok('partie multi enregistrée (2 adversaires)', last && last.opponentIds.length === 2, last);
+        const eloAfter = (await api('GET', '/users/' + idA, null, tokB)).json.elo;
+        ok('Elo inchangé en multi 3j', eloAfter === eloBefore, { eloBefore, eloAfter });
+        resolve();
+      }, 600);
+    }
+
+    const joinWith = (w) => w.send(JSON.stringify({ type: 'join', code: code }));
+
+    // Chaque socket joue quand c'est son tour : l'hôte ferme dès que possible,
+    // B et C marquent peu (3) pour ne jamais finir avant l'hôte.
+    function playOnTurn(w, m, isHost) {
+      if (!m.started || m.winner !== null || m.turn !== m.you) return;
+      const rem = m.remaining[m.you];
+      const total = isHost ? (rem <= 180 ? rem : 140) : 3;
+      w.send(JSON.stringify({ type: 'visit', total: total }));
+    }
+
+    a.on('open', function () {
+      a.send(JSON.stringify({ type: 'create', config: { startScore: 301, legsToWin: 1, finishMode: 'simple', maxPlayers: 3 } }));
+    });
+    a.on('message', function (raw) {
+      const m = JSON.parse(raw);
+      if (process.env.SMOKE_DEBUG) console.log('  [host]', m.type, m.type === 'lobby' ? m.names : (m.type === 'state' ? ('turn=' + m.turn + ' ev=' + m.event) : (m.error || '')));
+      if (m.type === 'room') {
+        code = m.code;
+        [b, c].forEach((w) => { if (w.readyState === WebSocket.OPEN) joinWith(w); else w.on('open', () => joinWith(w)); });
+      }
+      if (m.type === 'lobby') {
+        lobbySeen = true;
+        // Démarre quand les 3 sont là (l'hôte lance).
+        if (m.names.length === 3 && !started) { started = true; a.send(JSON.stringify({ type: 'start' })); }
+      }
+      if (m.type === 'state') {
+        if (m.event === 'win') { ok('victoire 3j détectée (hôte, index 0) après lobby', m.winner === 0 && lobbySeen, m); cleanup(); return; }
+        playOnTurn(a, m, true);
+      }
+    });
+    b.on('message', function (raw) { const m = JSON.parse(raw); if (m.type === 'state' && m.event !== 'win') playOnTurn(b, m, false); });
+    c.on('message', function (raw) { const m = JSON.parse(raw); if (m.type === 'state' && m.event !== 'win') playOnTurn(c, m, false); });
+    [a, b, c].forEach((w, i) => w.on('error', function (e) { ok('ws 3j #' + i + ' sans erreur', false, String(e)); cleanup(); }));
   });
 }
 
