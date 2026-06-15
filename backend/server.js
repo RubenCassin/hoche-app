@@ -54,10 +54,20 @@ app.get('/health', function (req, res) {
   res.json({ status: 'ok', service: 'HOCHE Backend', version: '2.0.0' });
 });
 
-// ── App web (même codebase, exportée par `expo export -p web` → backend/web) ──
-// Sert le client web sur le même domaine que l'API : tes potes iPhone ouvrent
-// juste l'URL dans Safari. Les routes API ci-dessus matchent en premier ; tout
-// le reste (routes client expo-router) retombe sur index.html.
+// ── App web dédiée (Vite + React → backend/webapp), servie sur /app ──────────
+// Vraie interface web (desktop + mobile), en construction écran par écran.
+// Doit être déclarée AVANT le fallback du web RN ci-dessous.
+const WEBAPP_DIR = path.join(__dirname, 'webapp');
+if (fs.existsSync(path.join(WEBAPP_DIR, 'index.html'))) {
+  app.use('/app', express.static(WEBAPP_DIR));
+  app.get('/app/*', function (req, res) {
+    res.sendFile(path.join(WEBAPP_DIR, 'index.html'));
+  });
+}
+
+// ── App web RN (export Expo → backend/web), servie sur / (testeurs iPhone) ───
+// Les routes API ci-dessus matchent en premier ; tout le reste (routes client
+// expo-router) retombe sur index.html.
 const WEB_DIR = path.join(__dirname, 'web');
 if (fs.existsSync(path.join(WEB_DIR, 'index.html'))) {
   app.use(express.static(WEB_DIR));
