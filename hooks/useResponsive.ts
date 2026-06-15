@@ -11,7 +11,7 @@ export function useResponsive() {
     height,
     isWide,
     isDesktop,
-    // Largeur de contenu centrée selon l'écran (évite l'étirement plein écran).
-    contentWidth: isDesktop ? Math.min(width - 64, 1040) : width,
+    // Le contenu occupe toute la largeur (les écrans gèrent leurs propres marges).
+    contentWidth: width,
   };
 }

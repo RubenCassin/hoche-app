@@ -70,7 +70,7 @@ export default function HomeScreen() {
       <OcheHeader mode={appMode} />
 
       <ScrollView contentContainerStyle={styles.scrollOuter}>
-       <View style={[styles.content, { maxWidth: contentWidth }]}>
+       <View style={[styles.content, { maxWidth: contentWidth }, isDesktop && styles.contentDesktop]}>
         {/* Greeting */}
         <OcheText variant="displaySm" allCaps color={C.cream} style={styles.greeting}>
           Salut {firstName}.
@@ -184,6 +184,7 @@ const makeStyles = (C: ReturnType<typeof useTheme>) => StyleSheet.create({
     paddingHorizontal: Spacing.s4,
     gap: Spacing.s4,
   },
+  contentDesktop: { paddingHorizontal: Spacing.s6 },
   // Bloc d'actions : empilé (mobile) ou en 2 colonnes (desktop).
   actions: { gap: Spacing.s4 },
   actionsRow: { flexDirection: 'row', alignItems: 'stretch' },

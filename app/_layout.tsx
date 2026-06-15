@@ -135,19 +135,15 @@ export default function RootLayout() {
 
   if (!ready || status === 'loading') return null;
 
-  // Sur web/grand écran : cadre large (jusqu'à 1100px) centré sur un fond sombre.
-  // Le « chrome » (header, onglets) occupe cette largeur ; chaque écran centre
-  // ensuite son propre contenu à une largeur adaptée (mise en page desktop).
+  // Web : l'app occupe toute la largeur de l'écran (pas de colonne centrée).
+  // Chaque écran gère ses marges/colonnes via useResponsive.
   const isWeb = Platform.OS === 'web';
-  const frame = isWeb
-    ? { flex: 1, width: '100%' as const, maxWidth: 1100, alignSelf: 'center' as const, backgroundColor: C.walnut }
-    : { flex: 1 };
 
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0E0805', alignItems: isWeb ? 'center' : 'stretch' }}>
-          <View style={frame}>
+        <GestureHandlerRootView style={{ flex: 1, backgroundColor: C.walnut }}>
+          <View style={{ flex: 1 }}>
           <StatusBar style={scheme === 'light' ? 'dark' : 'light'} backgroundColor={C.walnut} />
           <Stack
             screenOptions={{
