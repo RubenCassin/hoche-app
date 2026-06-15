@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { Platform, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -81,6 +82,19 @@ export default function RootLayout() {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
+  // Sur web, expo-font déclare les @font-face mais ne force pas leur
+  // téléchargement → le texte tombe en Times New Roman. On déclenche le fetch
+  // de toutes les familles déclarées une fois prêt (le navigateur les applique
+  // ensuite). No-op hors web.
+  useEffect(() => {
+    if (!ready || Platform.OS !== 'web') return;
+    const f: any = typeof document !== 'undefined' ? (document as any).fonts : undefined;
+    if (!f || !f.forEach) return;
+    try {
+      f.forEach((face: any) => { f.load(`1em "${face.family}"`).catch(() => {}); });
+    } catch {}
+  }, [ready]);
+
   // Once signed in (per session): register for push, and auto-detect location
   // via GPS the first time the account has none. Both are best-effort.
   useEffect(() => {
@@ -111,10 +125,18 @@ export default function RootLayout() {
 
   if (!ready || status === 'loading') return null;
 
+  // Sur web/grand écran, on cadre l'app dans une colonne « téléphone » centrée
+  // (sinon la mise en page mobile s'étire sur toute la largeur du navigateur).
+  const isWeb = Platform.OS === 'web';
+  const frame = isWeb
+    ? { flex: 1, width: '100%' as const, maxWidth: 480, alignSelf: 'center' as const, backgroundColor: C.walnut, overflow: 'hidden' as const }
+    : { flex: 1 };
+
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <GestureHandlerRootView style={{ flex: 1, backgroundColor: C.walnut }}>
+        <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0E0805', alignItems: isWeb ? 'center' : 'stretch' }}>
+          <View style={frame}>
           <StatusBar style={scheme === 'light' ? 'dark' : 'light'} backgroundColor={C.walnut} />
           <Stack
             screenOptions={{
@@ -148,6 +170,7 @@ export default function RootLayout() {
             <Stack.Screen name="notifications" />
           </Stack>
           {status === 'authed' && <LiveInviteListener />}
+          </View>
         </GestureHandlerRootView>
       </SafeAreaProvider>
     </QueryClientProvider>

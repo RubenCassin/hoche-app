@@ -17,11 +17,14 @@ import { OcheHeader } from '@/components/OcheHeader';
 import { OcheText } from '@/components/OcheText';
 import { OcheButton } from '@/components/OcheButton';
 import { NumpadInput } from '@/components/NumpadInput';
+import { DartPad } from '@/components/DartPad';
+import { DartboardInput } from '@/components/DartboardInput';
 import { CheckoutPill } from '@/components/CheckoutPill';
 import { MonogramPortrait } from '@/components/MonogramPortrait';
 import { Spacing, Radii } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/hooks/useAuthStore';
+import type { DartEntry } from '@/hooks/useGameStore';
 import { connectLive, onLive, liveSend, isLiveReady } from '@/services/liveSocket';
 import { sendMessage } from '@/services/api';
 import { queryClient } from '@/services/queryClient';
@@ -51,6 +54,13 @@ interface ChatMsg { fromIdx: number; text: string }
 const EVENT_LABEL: Record<string, string> = {
   '180': '💥 180 !', bust: 'Bust', leg: '✓ Leg remporté', win: '🏆 Match terminé',
 };
+
+/** Libellé court d'une fléchette pour la volée online par-fléchette. */
+function dlabel(d: DartEntry): string {
+  if (!d || d.segment === 0) return 'M';
+  if (d.segment === 25) return d.points === 50 ? 'BULL' : '25';
+  return `${d.modifier !== 'S' ? d.modifier : ''}${d.segment}`;
+}
 const REACTIONS = ['👏', '🔥', '😅', '🎯', '💪', '😱'];
 const VARIANTS = [301, 501, 701];
 const LEGS = [1, 3, 5];
@@ -81,6 +91,10 @@ export default function OnlineMatchScreen() {
   const [oppLeft, setOppLeft] = useState(false);
   const [rematchOffer, setRematchOffer] = useState(false);
   const [rematchSent, setRematchSent] = useState(false);
+
+  // Saisie du score : numpad (total) ou par fléchette (grille / cible).
+  const [inputMode, setInputMode] = useState<'numpad' | 'grid' | 'board'>('numpad');
+  const [liveVisit, setLiveVisit] = useState<DartEntry[]>([]);
 
   // Format pickers (private rooms / invites).
   const [startScore, setStartScore] = useState(501);
@@ -219,8 +233,30 @@ export default function OnlineMatchScreen() {
     }
   }, [phase, tmatchId]);
 
+  // Volée par-fléchette remise à zéro à chaque changement de tour / d'état.
+  useEffect(() => { setLiveVisit([]); }, [gs?.turn, gs?.winner]);
+
   const leave = () => { liveSend({ type: 'leave' }); router.back(); };
   const submitVisit = (total: number) => liveSend({ type: 'visit', total });
+
+  // Saisie par fléchette (grille / cible) : on cumule la volée puis on envoie le
+  // total quand 3 fléchettes sont posées ou qu'on touche/dépasse 0 (le serveur
+  // tranche bust/checkout depuis le total, comme pour le numpad).
+  const liveVisitTotal = liveVisit.reduce((s, d) => s + d.points, 0);
+  const onDart = (points: number, modifier: DartEntry['modifier'], segment: number) => {
+    if (!gs) return;
+    const next = [...liveVisit, { points, modifier, segment }];
+    const total = next.reduce((s, d) => s + d.points, 0);
+    const projected = gs.remaining[gs.you] - total;
+    const doubleOut = gs.config.finishMode !== 'simple';
+    if (next.length >= 3 || projected <= 0 || (doubleOut && projected === 1)) {
+      submitVisit(total);
+      setLiveVisit([]);
+    } else {
+      setLiveVisit(next);
+    }
+  };
+  const undoDart = () => setLiveVisit((v) => v.slice(0, -1));
   const doRematch = () => { setRematchSent(true); liveSend({ type: 'rematch' }); };
   const sendChat = () => {
     const t = chatText.trim();
@@ -500,9 +536,40 @@ export default function OnlineMatchScreen() {
           myTurn ? (
             <>
               <View style={styles.checkoutRow}>
-                <CheckoutPill remaining={gs.remaining[me]} dartsLeft={3} finishMode={gs.config.finishMode} />
+                <CheckoutPill
+                  remaining={gs.remaining[me] - (inputMode === 'numpad' ? 0 : liveVisitTotal)}
+                  dartsLeft={inputMode === 'numpad' ? 3 : 3 - liveVisit.length}
+                  finishMode={gs.config.finishMode}
+                />
               </View>
-              <NumpadInput onSubmit={submitVisit} style={styles.pad} />
+              <View style={styles.inputModeRow}>
+                {([['numpad', 'Numpad'], ['grid', 'Grille'], ['board', 'Cible']] as const).map(([m, label]) => (
+                  <Pressable key={m} onPress={() => { setInputMode(m); setLiveVisit([]); }} style={[styles.modeBtn, inputMode === m && styles.modeBtnOn]}>
+                    <OcheText variant="labelSm" allCaps color={inputMode === m ? C.onAmber : C.fg2}>{label}</OcheText>
+                  </Pressable>
+                ))}
+              </View>
+              {inputMode === 'numpad' ? (
+                <NumpadInput onSubmit={submitVisit} style={styles.pad} />
+              ) : (
+                <>
+                  <View style={styles.visitStrip}>
+                    {[0, 1, 2].map((i) => (
+                      <View key={i} style={[styles.visitSlot, liveVisit[i] && styles.visitSlotFilled]}>
+                        <OcheText variant="monoSm" color={liveVisit[i] ? C.cream : C.fg3}>
+                          {liveVisit[i] ? dlabel(liveVisit[i]) : '—'}
+                        </OcheText>
+                      </View>
+                    ))}
+                    <OcheText variant="monoMd" color={C.amber} style={styles.visitTotal}>{liveVisitTotal}</OcheText>
+                  </View>
+                  {inputMode === 'grid' ? (
+                    <DartPad onScore={onDart} onUndo={undoDart} style={styles.pad} />
+                  ) : (
+                    <DartboardInput onScore={onDart} onUndo={undoDart} style={styles.pad} />
+                  )}
+                </>
+              )}
             </>
           ) : (
             <View style={styles.waitTurn}>
@@ -663,6 +730,13 @@ const makeStyles = (C: ReturnType<typeof useTheme>) =>
     },
     eventBanner: { alignSelf: 'center', backgroundColor: C.amber, paddingHorizontal: Spacing.s3, paddingVertical: 4 },
     checkoutRow: { height: 40, justifyContent: 'center', paddingHorizontal: Spacing.s2 },
+    inputModeRow: { flexDirection: 'row', gap: Spacing.s2, paddingHorizontal: Spacing.s2 },
+    modeBtn: { flex: 1, alignItems: 'center', paddingVertical: 7, borderWidth: 1, borderColor: C.border1, backgroundColor: C.walnutUp },
+    modeBtnOn: { backgroundColor: C.amber, borderColor: C.amber },
+    visitStrip: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s2, paddingHorizontal: Spacing.s2 },
+    visitSlot: { minWidth: 48, paddingVertical: 4, paddingHorizontal: 8, borderWidth: 1, borderColor: C.border2, borderStyle: 'dashed', alignItems: 'center' },
+    visitSlotFilled: { borderColor: C.border1, borderStyle: 'solid', backgroundColor: C.walnutUp2 },
+    visitTotal: { marginLeft: 'auto' },
     pad: { flex: 1 },
     waitTurn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.s3 },
     endCard: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.s2 },
@@ -673,10 +747,13 @@ const makeStyles = (C: ReturnType<typeof useTheme>) =>
     },
     reactionBtn: { paddingHorizontal: Spacing.s2, paddingVertical: 2 },
     reactionsFloat: {
-      position: 'absolute', top: '38%', left: 0, right: 0,
-      flexDirection: 'row', justifyContent: 'center', gap: Spacing.s3, zIndex: 90,
+      position: 'absolute', bottom: 76, left: 0, right: 0,
+      flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: Spacing.s2, zIndex: 90,
     },
-    floatEmoji: { textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },
+    floatEmoji: {
+      fontSize: 44, lineHeight: 52,
+      textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8,
+    },
 
     chatWrap: { backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end', zIndex: 120 },
     chatPanel: {
