@@ -11,12 +11,14 @@ import { Spacing, Radii, Shadows } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useGameStore } from '@/hooks/useGameStore';
 import { useAuthStore } from '@/hooks/useAuthStore';
+import { useResponsive } from '@/hooks/useResponsive';
 import { getStats } from '@/services/api';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const C = useTheme();
   const styles = makeStyles(C);
+  const { isDesktop, contentWidth } = useResponsive();
   const appMode = useGameStore((s) => s.appMode);
   const config = useGameStore((s) => s.config);
   const players = useGameStore((s) => s.players);
@@ -67,7 +69,8 @@ export default function HomeScreen() {
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <OcheHeader mode={appMode} />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scrollOuter}>
+       <View style={[styles.content, { maxWidth: contentWidth }]}>
         {/* Greeting */}
         <OcheText variant="displaySm" allCaps color={C.cream} style={styles.greeting}>
           Salut {firstName}.
@@ -87,47 +90,49 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        {/* Hero — Nouvelle partie → choix du jeu */}
-        <View style={styles.hero}>
-          <View style={styles.heroMark} pointerEvents="none">
-            <OcheMark size={240} />
+        {/* Hero + cartes soirée — en colonnes sur desktop, empilées sur mobile */}
+        <View style={[styles.actions, isDesktop && styles.actionsRow]}>
+          <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
+            <View style={styles.heroMark} pointerEvents="none">
+              <OcheMark size={240} />
+            </View>
+            <OcheText variant="labelMd" allCaps color={C.orange} style={styles.heroEyebrow}>
+              5 jeux · solo · duo · équipes
+            </OcheText>
+            <OcheText variant="displayLg" allCaps color={C.cream} style={styles.heroTitle}>
+              Nouvelle{'\n'}Partie
+            </OcheText>
+            <OcheButton label="→ Choisir un jeu" onPress={chooseGame} variant="primary" size="lg" fullWidth style={styles.cta} />
           </View>
 
-          <OcheText variant="labelMd" allCaps color={C.orange} style={styles.heroEyebrow}>
-            5 jeux · solo · duo · équipes
-          </OcheText>
-          <OcheText variant="displayLg" allCaps color={C.cream} style={styles.heroTitle}>
-            Nouvelle{'\n'}Partie
-          </OcheText>
+          <View style={[styles.sideCards, isDesktop && styles.sideCardsDesktop]}>
+            {/* Tournoi — soirées entre potes */}
+            <Pressable
+              onPress={() => router.push('/tournament')}
+              style={({ pressed }) => [styles.tournament, isDesktop && styles.cardGrow, pressed && styles.pressed]}
+            >
+              <View style={{ flex: 1 }}>
+                <OcheText variant="labelSm" allCaps color={C.fg3}>Soirée</OcheText>
+                <OcheText variant="h3" color={C.cream}>🏆 Tournoi</OcheText>
+                <OcheText variant="bodyXS" color={C.fg3}>Bracket / poules, 3-8 joueurs ou équipes</OcheText>
+              </View>
+              <OcheText variant="labelMd" allCaps color={C.orange}>Lancer →</OcheText>
+            </Pressable>
 
-          <OcheButton label="→ Choisir un jeu" onPress={chooseGame} variant="primary" size="lg" fullWidth style={styles.cta} />
+            {/* Entraînement — drills solo */}
+            <Pressable
+              onPress={() => router.push('/practice')}
+              style={({ pressed }) => [styles.tournament, isDesktop && styles.cardGrow, pressed && styles.pressed]}
+            >
+              <View style={{ flex: 1 }}>
+                <OcheText variant="labelSm" allCaps color={C.fg3}>Solo</OcheText>
+                <OcheText variant="h3" color={C.cream}>🎯 Entraînement</OcheText>
+                <OcheText variant="bodyXS" color={C.fg3}>Bob's 27, doubles, scoring — bats ton record</OcheText>
+              </View>
+              <OcheText variant="labelMd" allCaps color={C.amber}>Drills →</OcheText>
+            </Pressable>
+          </View>
         </View>
-
-        {/* Tournoi — soirées entre potes */}
-        <Pressable
-          onPress={() => router.push('/tournament')}
-          style={({ pressed }) => [styles.tournament, pressed && styles.pressed]}
-        >
-          <View style={{ flex: 1 }}>
-            <OcheText variant="labelSm" allCaps color={C.fg3}>Soirée</OcheText>
-            <OcheText variant="h3" color={C.cream}>🏆 Tournoi</OcheText>
-            <OcheText variant="bodyXS" color={C.fg3}>Bracket / poules, 3-8 joueurs ou équipes</OcheText>
-          </View>
-          <OcheText variant="labelMd" allCaps color={C.orange}>Lancer →</OcheText>
-        </Pressable>
-
-        {/* Entraînement — drills solo */}
-        <Pressable
-          onPress={() => router.push('/practice')}
-          style={({ pressed }) => [styles.tournament, pressed && styles.pressed]}
-        >
-          <View style={{ flex: 1 }}>
-            <OcheText variant="labelSm" allCaps color={C.fg3}>Solo</OcheText>
-            <OcheText variant="h3" color={C.cream}>🎯 Entraînement</OcheText>
-            <OcheText variant="bodyXS" color={C.fg3}>Bob's 27, doubles, scoring — bats ton record</OcheText>
-          </View>
-          <OcheText variant="labelMd" allCaps color={C.amber}>Drills →</OcheText>
-        </Pressable>
 
         {/* Cette semaine — stats (compte uniquement) */}
         {!guestMode && (
@@ -160,6 +165,7 @@ export default function HomeScreen() {
           </View>
         </View>
         )}
+       </View>
       </ScrollView>
     </View>
   );
@@ -167,12 +173,23 @@ export default function HomeScreen() {
 
 const makeStyles = (C: ReturnType<typeof useTheme>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.walnut },
-  scroll: {
-    paddingHorizontal: Spacing.s4,
+  scrollOuter: {
     paddingTop: Spacing.s3,
     paddingBottom: Spacing.s10,
+    alignItems: 'center',
+  },
+  content: {
+    width: '100%',
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.s4,
     gap: Spacing.s4,
   },
+  // Bloc d'actions : empilé (mobile) ou en 2 colonnes (desktop).
+  actions: { gap: Spacing.s4 },
+  actionsRow: { flexDirection: 'row', alignItems: 'stretch' },
+  sideCards: { gap: Spacing.s4 },
+  sideCardsDesktop: { flex: 1, gap: Spacing.s4 },
+  cardGrow: { flex: 1 },
   pressed: { transform: [{ scale: 0.98 }], opacity: 0.9 },
 
   greeting: { letterSpacing: 1 },
@@ -207,6 +224,7 @@ const makeStyles = (C: ReturnType<typeof useTheme>) => StyleSheet.create({
     overflow: 'hidden',
     ...Shadows.glowOrange,
   },
+  heroDesktop: { flex: 1.3, justifyContent: 'center' },
   heroMark: { position: 'absolute', right: -56, top: -28, opacity: 0.06 },
   heroEyebrow: { letterSpacing: 2 },
   heroTitle: { letterSpacing: -1, marginTop: -4 },
