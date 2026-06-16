@@ -290,4 +290,18 @@ input:focus { outline: none; border-color: var(--amber); }
 .drill-score-row { display: flex; gap: 12px; margin-bottom: 16px; max-width: 460px; }
 .drill-score-row .stat-card { flex: 1; }
 
+/* ── Jouer en direct (online temps réel) ───────────────────────────────────── */
+.join-row { display: flex; gap: 8px; align-items: center; }
+.join-row input { flex: 1; text-transform: none; }
+.react-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+.react-btn { background: var(--walnut-up); border: 1px solid var(--edge); font-size: 22px; line-height: 1; padding: 8px 12px; border-radius: var(--r); }
+.react-btn:hover { background: var(--walnut-up2); transform: translateY(-2px); }
+.react-float { position: fixed; right: 32px; bottom: 120px; display: flex; flex-direction: column-reverse; gap: 6px; font-size: 40px; pointer-events: none; z-index: 60; }
+.react-float span { animation: reactPop 2.2s ease forwards; }
+@keyframes reactPop { 0% { opacity: 0; transform: translateY(20px) scale(.5); } 15% { opacity: 1; transform: translateY(0) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-40px) scale(1); } }
+.chat-panel { margin-top: 18px; max-width: 560px; display: flex; flex-direction: column; gap: 10px; }
+.chat-msgs { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+.chat-bubble { align-self: flex-start; background: var(--walnut-up2); border: 1px solid var(--edge); padding: 6px 12px; max-width: 80%; font-size: 14px; }
+.chat-bubble.mine { align-self: flex-end; background: var(--oak); border-color: var(--orange); }
+
 

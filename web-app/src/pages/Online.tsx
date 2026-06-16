@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getLeaderboard, type LbScope, type LbRow } from '../api';
 import { useAuth } from '../auth';
@@ -22,6 +23,7 @@ const fmt = (r: LbRow, m: Metric) => (m === 'avg' ? r.three_dart_avg.toFixed(1) 
 
 export function Online() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [scope, setScope] = useState<LbScope>('world');
   const [metric, setMetric] = useState<Metric>('elo');
   const { data, isLoading } = useQuery({ queryKey: ['lb', scope], queryFn: () => getLeaderboard(scope) });
@@ -33,7 +35,10 @@ export function Online() {
 
   return (
     <div className="page">
-      <h1 className="display page-title">Classement</h1>
+      <div className="play-head" style={{ marginBottom: 8 }}>
+        <h1 className="display page-title" style={{ margin: 0 }}>Classement</h1>
+        <button className="btn btn-primary" onClick={() => navigate('/direct')}>🔴 Jouer en direct</button>
+      </div>
 
       <div className="toolbar">
         <div className="seg">

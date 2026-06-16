@@ -9,6 +9,7 @@ import { Profil } from './pages/Profil';
 import { Feed } from './pages/Feed';
 import { Play } from './pages/Play';
 import { Practice } from './pages/Practice';
+import { Direct } from './pages/Direct';
 import { Placeholder } from './pages/Placeholder';
 
 export function App() {
@@ -26,6 +27,7 @@ export function App() {
         <Route path="/jouer" element={<Play />} />
         <Route path="/entrainement" element={<Practice />} />
         <Route path="/online" element={<Online />} />
+        <Route path="/direct" element={<Direct />} />
         <Route path="/tournois" element={<Placeholder title="Tournois" />} />
         <Route path="/feed" element={<Feed />} />
         <Route path="/stats" element={<StatsPage />} />
