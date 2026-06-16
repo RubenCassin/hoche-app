@@ -1,5 +1,13 @@
 import { useState } from 'react';
 import { initX01, addVisit, avg3, checkout, type X01State, type X01Config } from '../game/x01';
+import { DartGrid } from '../components/DartGrid';
+
+interface Dart { points: number; modifier: 'S' | 'D' | 'T'; segment: number; }
+function dlabel(d: Dart): string {
+  if (d.segment === 0) return 'M';
+  if (d.segment === 25) return d.points === 50 ? 'BULL' : '25';
+  return `${d.modifier !== 'S' ? d.modifier : ''}${d.segment}`;
+}
 
 const VARIANTS = [301, 501, 701];
 const LEGS = [1, 3, 5];
@@ -8,6 +16,8 @@ export function Play() {
   const [state, setState] = useState<X01State | null>(null);
   const [history, setHistory] = useState<X01State[]>([]);
   const [entry, setEntry] = useState('');
+  const [inputMode, setInputMode] = useState<'numpad' | 'grid'>('numpad');
+  const [liveVisit, setLiveVisit] = useState<Dart[]>([]);
 
   // ── Setup ──
   const [startScore, setStartScore] = useState(501);
@@ -27,13 +37,31 @@ export function Play() {
     setHistory((h) => [...h, state]);
     setState(addVisit(state, total));
     setEntry('');
+    setLiveVisit([]);
   };
   const undo = () => {
     if (history.length === 0) return;
     setState(history[history.length - 1]);
     setHistory((h) => h.slice(0, -1));
     setEntry('');
+    setLiveVisit([]);
   };
+
+  // Grille : on cumule la volée fléchette par fléchette, envoi auto à 3 fléchettes
+  // ou dès qu'on touche/dépasse 0 (le moteur tranche bust/checkout).
+  const liveTotal = liveVisit.reduce((s, d) => s + d.points, 0);
+  const onDart = (points: number, modifier: 'S' | 'D' | 'T', segment: number) => {
+    if (!state || state.winner !== null) return;
+    const next = [...liveVisit, { points, modifier, segment }];
+    const total = next.reduce((s, d) => s + d.points, 0);
+    const projected = state.players[state.turn].remaining - total;
+    if (next.length >= 3 || projected <= 0 || (state.config.doubleOut && projected === 1)) {
+      submit(total);
+    } else {
+      setLiveVisit(next);
+    }
+  };
+  const undoDart = () => setLiveVisit((v) => v.slice(0, -1));
 
   // ── Écran de setup ──
   if (!state) {
@@ -75,7 +103,8 @@ export function Play() {
 
   // ── Scoreboard ──
   const me = state.players[state.turn];
-  const co = state.winner === null ? checkout(me.remaining, state.config.doubleOut) : null;
+  const coRemaining = me.remaining - (inputMode === 'grid' ? liveTotal : 0);
+  const co = state.winner === null ? checkout(coRemaining, state.config.doubleOut) : null;
   const isOver = state.winner !== null;
   const submitEntry = () => { const t = parseInt(entry, 10); if (!isNaN(t)) submit(t); };
 
@@ -114,24 +143,41 @@ export function Play() {
           </div>
           <div className="turn-line"><b>{me.name}</b> — à toi de jouer</div>
 
-          <div className="numpad-wrap">
-            <div className="entry mono">{entry || '0'}</div>
-            <div className="numpad">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
-                <button key={d} className="num" onClick={() => setEntry((e) => (e + d).replace(/^0+/, '').slice(0, 3))}>{d}</button>
-              ))}
-              <button className="num" onClick={() => setEntry((e) => e.slice(0, -1))}>←</button>
-              <button className="num" onClick={() => setEntry((e) => (e + '0').replace(/^0+/, '').slice(0, 3))}>0</button>
-              <button className="num num-ok" onClick={submitEntry}>OK</button>
-            </div>
-            <div className="quick-row">
-              {[26, 41, 45, 60, 81, 100, 140, 180].map((q) => (
-                <button key={q} className="chip" onClick={() => submit(q)}>{q}</button>
-              ))}
-              <button className="chip" onClick={() => submit(0)}>0</button>
-              <button className="chip" onClick={undo} disabled={history.length === 0}>↶ Annuler</button>
-            </div>
+          <div className="seg" style={{ maxWidth: 280, marginBottom: 12 }}>
+            <button className={'seg-btn' + (inputMode === 'numpad' ? ' on' : '')} onClick={() => { setInputMode('numpad'); setLiveVisit([]); }}>Numpad</button>
+            <button className={'seg-btn' + (inputMode === 'grid' ? ' on' : '')} onClick={() => { setInputMode('grid'); setEntry(''); }}>Grille</button>
           </div>
+
+          {inputMode === 'numpad' ? (
+            <div className="numpad-wrap">
+              <div className="entry mono">{entry || '0'}</div>
+              <div className="numpad">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
+                  <button key={d} className="num" onClick={() => setEntry((e) => (e + d).replace(/^0+/, '').slice(0, 3))}>{d}</button>
+                ))}
+                <button className="num" onClick={() => setEntry((e) => e.slice(0, -1))}>←</button>
+                <button className="num" onClick={() => setEntry((e) => (e + '0').replace(/^0+/, '').slice(0, 3))}>0</button>
+                <button className="num num-ok" onClick={submitEntry}>OK</button>
+              </div>
+              <div className="quick-row">
+                {[26, 41, 45, 60, 81, 100, 140, 180].map((q) => (
+                  <button key={q} className="chip" onClick={() => submit(q)}>{q}</button>
+                ))}
+                <button className="chip" onClick={() => submit(0)}>0</button>
+                <button className="chip" onClick={undo} disabled={history.length === 0}>↶ Annuler</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="visit-strip">
+                {[0, 1, 2].map((i) => (
+                  <span key={i} className={'visit-slot' + (liveVisit[i] ? ' filled' : '')}>{liveVisit[i] ? dlabel(liveVisit[i]) : '—'}</span>
+                ))}
+                <span className="mono visit-total">Σ {liveTotal}</span>
+              </div>
+              <DartGrid onDart={onDart} onUndo={liveVisit.length ? undoDart : (history.length ? undo : undefined)} />
+            </>
+          )}
         </>
       )}
     </div>

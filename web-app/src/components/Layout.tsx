@@ -4,6 +4,7 @@ import { useAuth } from '../auth';
 
 const NAV = [
   { to: '/', label: 'Jouer', icon: '🎯', end: true },
+  { to: '/entrainement', label: 'Entraînement', icon: '🎓' },
   { to: '/online', label: 'Online', icon: '🌐' },
   { to: '/tournois', label: 'Tournois', icon: '🏆' },
   { to: '/feed', label: 'Feed', icon: '📰' },

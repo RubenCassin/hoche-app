@@ -258,4 +258,36 @@ input:focus { outline: none; border-color: var(--amber); }
 .win-card { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 36px; border-color: var(--win); }
 .win-name { font-size: 48px; color: var(--amber); }
 
+/* ── Grille de saisie (par fléchette) ──────────────────────────────────────── */
+.grid-input { max-width: 460px; display: flex; flex-direction: column; gap: 8px; }
+.grid-input.disabled { opacity: .5; pointer-events: none; }
+.mod-row { display: flex; gap: 8px; }
+.mod-btn { flex: 1; background: var(--walnut-up); border: 1px solid var(--edge); color: var(--fg2); padding: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 13px; }
+.mod-btn.on { background: var(--amber); color: var(--on-accent); border-color: var(--amber); }
+.seg-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.seg-cell { background: var(--walnut-up); border: 1px solid var(--edge); color: var(--cream); font-family: var(--display); font-size: 20px; padding: 12px 0; }
+.seg-cell:hover { background: var(--walnut-up2); }
+.seg-extra { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.seg-cell.wide { font-size: 15px; font-family: var(--body); font-weight: 700; }
+.seg-cell.bull { border-color: var(--brick); color: var(--brick); }
+.seg-cell.undo { color: var(--fg2); }
+.visit-strip { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.visit-slot { min-width: 52px; text-align: center; padding: 6px 8px; border: 1px dashed var(--edge-soft); font-family: var(--mono); color: var(--fg3); }
+.visit-slot.filled { border-style: solid; border-color: var(--edge); background: var(--walnut-up2); color: var(--cream); }
+.visit-total { margin-left: auto; color: var(--amber); font-size: 18px; }
+
+/* ── Entraînement ──────────────────────────────────────────────────────────── */
+.drill-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.drill-card { text-align: left; display: flex; flex-direction: column; gap: 6px; border-left: 3px solid var(--amber); cursor: pointer; }
+.drill-card:hover { background: var(--walnut-up2); }
+.drill-top { display: flex; align-items: center; justify-content: space-between; }
+.drill-name { font-weight: 800; font-size: 17px; }
+.drill-desc { font-size: 13px; line-height: 1.4; }
+.drill-rec { font-size: 12px; color: var(--amber); margin-top: 4px; }
+.drill-prompt { font-size: 26px; color: var(--amber); margin: 8px 0 12px; }
+.progress-track { height: 6px; background: var(--walnut-up2); border: 1px solid var(--edge); overflow: hidden; margin-bottom: 16px; }
+.progress-fill { height: 100%; background: var(--amber); }
+.drill-score-row { display: flex; gap: 12px; margin-bottom: 16px; max-width: 460px; }
+.drill-score-row .stat-card { flex: 1; }
+
 

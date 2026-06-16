@@ -8,6 +8,7 @@ import { StatsPage } from './pages/StatsPage';
 import { Profil } from './pages/Profil';
 import { Feed } from './pages/Feed';
 import { Play } from './pages/Play';
+import { Practice } from './pages/Practice';
 import { Placeholder } from './pages/Placeholder';
 
 export function App() {
@@ -23,6 +24,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/jouer" element={<Play />} />
+        <Route path="/entrainement" element={<Practice />} />
         <Route path="/online" element={<Online />} />
         <Route path="/tournois" element={<Placeholder title="Tournois" />} />
         <Route path="/feed" element={<Feed />} />
