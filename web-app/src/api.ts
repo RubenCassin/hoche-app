@@ -30,8 +30,25 @@ export interface User {
 }
 export interface Stats {
   matches_played: number; matches_won: number; win_pct: number;
-  three_dart_avg: number; total_180s: number; highest_checkout: number;
+  legs_played: number; legs_won: number;
+  three_dart_avg: number; first9_avg: number; best_game_avg: number;
+  total_180s: number; highest_checkout: number;
+  checkout_pct: number; doubles_hit: number;
+  best_win_streak: number;
+  scores_60: number; scores_100: number; scores_140: number; highest_score: number;
+  darts_per_leg: number; best_leg: number;
+  avg_history: number[];
 }
+
+export type LbScope = 'world' | 'europe' | 'country' | 'friends';
+export interface LbRow {
+  id: number; name: string; username: string; countryCode: string | null;
+  matches_played: number; matches_won: number; win_pct: number;
+  three_dart_avg: number; total_180s: number; highest_checkout: number;
+  elo: number; elo_games: number; flags: number;
+}
+export const getLeaderboard = (scope: LbScope) =>
+  api.get<LbRow[]>(`/leaderboard?scope=${scope}`).then((r) => r.data);
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const login = (username: string, password: string) =>
