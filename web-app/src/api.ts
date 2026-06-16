@@ -50,6 +50,41 @@ export interface LbRow {
 export const getLeaderboard = (scope: LbScope) =>
   api.get<LbRow[]>(`/leaderboard?scope=${scope}`).then((r) => r.data);
 
+// ── Profil ────────────────────────────────────────────────────────────────────
+export const getFollowCounts = (id: number) =>
+  api.get<{ followers: number; following: number }>(`/social/counts/${id}`).then((r) => r.data);
+export const updateMe = (patch: { name?: string; avatarUrl?: string | null; currentPassword?: string; newPassword?: string }) =>
+  api.patch<User>('/auth/me', patch).then((r) => r.data);
+
+// ── Feed ──────────────────────────────────────────────────────────────────────
+export interface FeedItem {
+  kind: 'post' | 'match';
+  id: string;
+  user_id: number;
+  userName: string;
+  username: string;
+  created_at: string;
+  text?: string;
+  likeCount?: number;
+  liked?: boolean;
+  commentCount?: number;
+  postId?: number;
+  gameType?: string;
+  matchWon?: boolean;
+  legsWon?: number;
+  oppLegs?: number;
+  opponents?: string[];
+  total180s?: number;
+  highestCheckout?: number;
+  score?: number;
+}
+export const getFeed = (scope: 'foryou' | 'friends') =>
+  api.get<FeedItem[]>(`/feed?scope=${scope}`).then((r) => r.data);
+export const createPost = (text: string) =>
+  api.post('/posts', { text }).then((r) => r.data);
+export const likePost = (postId: number) =>
+  api.post<{ liked: boolean; likeCount: number }>(`/posts/${postId}/like`).then((r) => r.data);
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const login = (username: string, password: string) =>
   api.post<{ token: string; user: User }>('/auth/login', { username, password }).then((r) => r.data);

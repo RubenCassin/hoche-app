@@ -5,6 +5,8 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Online } from './pages/Online';
 import { StatsPage } from './pages/StatsPage';
+import { Profil } from './pages/Profil';
+import { Feed } from './pages/Feed';
 import { Placeholder } from './pages/Placeholder';
 
 export function App() {
@@ -21,9 +23,9 @@ export function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/online" element={<Online />} />
         <Route path="/tournois" element={<Placeholder title="Tournois" />} />
-        <Route path="/feed" element={<Placeholder title="Feed" />} />
+        <Route path="/feed" element={<Feed />} />
         <Route path="/stats" element={<StatsPage />} />
-        <Route path="/profil" element={<Placeholder title="Profil" />} />
+        <Route path="/profil" element={<Profil />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
