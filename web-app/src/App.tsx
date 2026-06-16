@@ -7,6 +7,7 @@ import { Online } from './pages/Online';
 import { StatsPage } from './pages/StatsPage';
 import { Profil } from './pages/Profil';
 import { Feed } from './pages/Feed';
+import { Play } from './pages/Play';
 import { Placeholder } from './pages/Placeholder';
 
 export function App() {
@@ -21,6 +22,7 @@ export function App() {
     <Layout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/jouer" element={<Play />} />
         <Route path="/online" element={<Online />} />
         <Route path="/tournois" element={<Placeholder title="Tournois" />} />
         <Route path="/feed" element={<Feed />} />

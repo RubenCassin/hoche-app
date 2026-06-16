@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { getStats } from '../api';
 
 export function Dashboard() {
   const { user } = useAuth();
+  const nav = useNavigate();
   const { data: stats } = useQuery({ queryKey: ['stats', user?.id], queryFn: () => getStats(user!.id), enabled: !!user });
   const first = (user?.name || 'Joueur').split(' ')[0];
 
@@ -17,12 +19,12 @@ export function Dashboard() {
           <div className="eyebrow">5 jeux · solo · duo · équipes</div>
           <h2 className="display hero-title">Nouvelle<br />partie</h2>
           <p className="muted">X01, Cricket, Around the Clock, Killer, Shanghai, Halve-it.</p>
-          <button className="btn btn-primary hero-cta">→ Choisir un jeu</button>
+          <button className="btn btn-primary hero-cta" onClick={() => nav('/jouer')}>→ Choisir un jeu</button>
         </section>
 
         {/* Cartes soirée */}
         <div className="dash-side">
-          <section className="card tile">
+          <section className="card tile" onClick={() => nav('/tournois')} style={{ cursor: 'pointer' }}>
             <div>
               <div className="eyebrow" style={{ color: 'var(--fg3)' }}>Soirée</div>
               <h3 className="tile-title">🏆 Tournoi</h3>
@@ -30,13 +32,13 @@ export function Dashboard() {
             </div>
             <span className="tile-go">Lancer →</span>
           </section>
-          <section className="card tile">
+          <section className="card tile" onClick={() => nav('/online')} style={{ cursor: 'pointer' }}>
             <div>
               <div className="eyebrow" style={{ color: 'var(--fg3)' }}>Online</div>
-              <h3 className="tile-title">🌐 Jouer en direct</h3>
-              <p className="muted">Défie un ami, 1v1 ou groupe.</p>
+              <h3 className="tile-title">🌐 Classement</h3>
+              <p className="muted">Elo, 180s, victoires — Monde &amp; amis.</p>
             </div>
-            <span className="tile-go">Rejoindre →</span>
+            <span className="tile-go">Voir →</span>
           </section>
         </div>
       </div>
