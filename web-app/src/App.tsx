@@ -10,7 +10,9 @@ import { Feed } from './pages/Feed';
 import { Play } from './pages/Play';
 import { Practice } from './pages/Practice';
 import { Direct } from './pages/Direct';
-import { Placeholder } from './pages/Placeholder';
+import { Messages } from './pages/Messages';
+import { Conversation } from './pages/Conversation';
+import { Tournament } from './pages/Tournament';
 
 export function App() {
   const { user, loading } = useAuth();
@@ -28,7 +30,9 @@ export function App() {
         <Route path="/entrainement" element={<Practice />} />
         <Route path="/online" element={<Online />} />
         <Route path="/direct" element={<Direct />} />
-        <Route path="/tournois" element={<Placeholder title="Tournois" />} />
+        <Route path="/messages" element={<Messages />} />
+        <Route path="/messages/:id" element={<Conversation />} />
+        <Route path="/tournament/:id" element={<Tournament />} />
         <Route path="/feed" element={<Feed />} />
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/profil" element={<Profil />} />

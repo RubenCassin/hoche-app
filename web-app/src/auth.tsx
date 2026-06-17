@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { fetchMe, getToken, setToken, type User } from './api';
+import { liveConnect, liveDisconnect } from './live';
 
 interface AuthCtx {
   user: User | null;
@@ -20,13 +21,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const t = getToken();
     if (!t) { setLoading(false); return; }
     fetchMe()
-      .then(setUser)
+      .then((u) => { setUser(u); liveConnect(); })
       .catch(() => setToken(null))
       .finally(() => setLoading(false));
   }, []);
 
-  const signIn = (token: string, u: User) => { setToken(token); setUser(u); };
-  const signOut = () => { setToken(null); setUser(null); };
+  const signIn = (token: string, u: User) => { setToken(token); setUser(u); liveConnect(); };
+  const signOut = () => { liveDisconnect(); setToken(null); setUser(null); };
 
   return <Ctx.Provider value={{ user, loading, signIn, signOut, setUser }}>{children}</Ctx.Provider>;
 }

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { liveConnect, onLive, liveSend, liveReady } from '../live';
+import { sendMessage } from '../api';
 import { checkout } from '../game/x01';
 import { DartGrid } from '../components/DartGrid';
 
@@ -39,13 +41,34 @@ export function Direct() {
   const rid = useRef(0);
   const inRoom = useRef(false);
 
+  // Entrée directe depuis le chat / tournoi : ?join=CODE, ?tmatch=ID,
+  // ?host=1&conv=ID (crée un salon puis poste l'invitation dans la conversation).
+  const [params] = useSearchParams();
+  const joinParam = params.get('join');
+  const tmatchParam = params.get('tmatch');
+  const hostConv = params.get('host') ? params.get('conv') : null;
+  const acted = useRef(false);
+  const inviteConv = useRef<number | null>(null);
+
   useEffect(() => {
     liveConnect();
-    if (liveReady()) setPhase((p) => (p === 'connecting' ? 'idle' : p));
+    const runEntry = () => {
+      if (acted.current) return;
+      if (joinParam) { acted.current = true; liveSend({ type: 'join', code: joinParam.toUpperCase() }); }
+      else if (tmatchParam) { acted.current = true; liveSend({ type: 'join_tournament_match', matchId: Number(tmatchParam) }); }
+      else if (hostConv) { acted.current = true; inviteConv.current = Number(hostConv); liveSend({ type: 'create', config: { startScore, legsToWin, finishMode } }); }
+    };
+    if (liveReady()) { setPhase((p) => (p === 'connecting' ? 'idle' : p)); runEntry(); }
     const off = onLive((m: any) => {
       switch (m.type) {
-        case 'connected': setPhase((p) => (p === 'connecting' ? 'idle' : p)); break;
-        case 'room': setCode(m.code); inRoom.current = true; setPhase('waiting'); break;
+        case 'connected': setPhase((p) => (p === 'connecting' ? 'idle' : p)); runEntry(); break;
+        case 'room':
+          setCode(m.code); inRoom.current = true; setPhase('waiting');
+          if (inviteConv.current) {
+            sendMessage(inviteConv.current, { text: '🎯 Match lancé — tape « Rejoindre » !', kind: 'match_invite', meta: { code: m.code } }).catch(() => {});
+            inviteConv.current = null;
+          }
+          break;
         case 'state':
           inRoom.current = true; setGs(m); setPhase('playing'); setVisit([]); setRematchOffer(false); setRematchSent(false);
           break;
