@@ -93,6 +93,17 @@ export const register = (name: string, username: string, password: string) =>
 export const fetchMe = () => api.get<User>('/auth/me').then((r) => r.data);
 export const getStats = (id: number) => api.get<Stats>(`/users/${id}/stats`).then((r) => r.data);
 
+// ── Sauvegarde de partie (local → backend, pour stats/historique/feed) ───────
+export interface GameResult {
+  gameType: 'x01' | 'cricket' | 'atc' | 'killer' | 'shanghai' | 'halveit';
+  matchWon: boolean;
+  legsWon?: number; legsPlayed?: number;
+  opponents?: string[];
+  dartsThrown?: number; avg?: number; total180s?: number;
+  highestCheckout?: number; score?: number; startScore?: number;
+}
+export const saveGame = (r: GameResult) => api.post('/games', r).then((res) => res.data);
+
 // ── Recherche / amis ────────────────────────────────────────────────────────
 export interface SearchUser extends User { isFollowing?: boolean; mutual?: boolean }
 export const searchUsers = (q: string) =>

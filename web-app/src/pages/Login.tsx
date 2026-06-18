@@ -3,7 +3,7 @@ import { login, register, apiError } from '../api';
 import { useAuth } from '../auth';
 
 export function Login() {
-  const { signIn } = useAuth();
+  const { signIn, continueAsGuest } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
@@ -49,6 +49,8 @@ export function Login() {
         <button className="btn btn-primary" disabled={busy || !username || !password}>
           {busy ? '…' : mode === 'login' ? 'Se connecter' : "S'inscrire"}
         </button>
+        <button type="button" className="btn btn-ghost" onClick={continueAsGuest}>🎯 Jouer en invité</button>
+        <div className="muted" style={{ fontSize: 12, textAlign: 'center' }}>En invité : jeux locaux + entraînement, sans compte.</div>
       </form>
     </div>
   );

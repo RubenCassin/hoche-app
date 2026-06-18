@@ -19,7 +19,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
   const qc = useQueryClient();
 
-  const { data: unread = 0 } = useQuery({ queryKey: ['chat-unread'], queryFn: getChatUnread, refetchInterval: 30000 });
+  const { data: unread = 0 } = useQuery({ queryKey: ['chat-unread'], queryFn: getChatUnread, refetchInterval: 30000, enabled: !!user });
 
   // Temps réel global : un message/lecture/ajout met à jour les caches chat,
   // un tournament_update rafraîchit le bracket concerné.
@@ -63,11 +63,20 @@ export function Layout({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className="sidebar-foot">
-          <div className="who">
-            <div className="who-name">{user?.name}</div>
-            <div className="who-sub muted">{user?.username}</div>
-          </div>
-          <button className="btn btn-ghost btn-sm" onClick={signOut}>Déconnexion</button>
+          {user ? (
+            <>
+              <div className="who">
+                <div className="who-name">{user.name}</div>
+                <div className="who-sub muted">{user.username}</div>
+              </div>
+              <button className="btn btn-ghost btn-sm" onClick={signOut}>Déconnexion</button>
+            </>
+          ) : (
+            <>
+              <div className="who"><div className="who-name">Invité</div><div className="who-sub muted">Partie locale</div></div>
+              <button className="btn btn-amber btn-sm" onClick={signOut}>Se connecter</button>
+            </>
+          )}
         </div>
       </aside>
       <main className="content">{children}</main>

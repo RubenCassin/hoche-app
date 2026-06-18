@@ -24,11 +24,11 @@ export function Dashboard() {
 
         {/* Cartes soirée */}
         <div className="dash-side">
-          <section className="card tile" onClick={() => nav('/tournois')} style={{ cursor: 'pointer' }}>
+          <section className="card tile" onClick={() => nav('/messages')} style={{ cursor: 'pointer' }}>
             <div>
               <div className="eyebrow" style={{ color: 'var(--fg3)' }}>Soirée</div>
               <h3 className="tile-title">🏆 Tournoi</h3>
-              <p className="muted">Bracket à élimination, 3-16 joueurs.</p>
+              <p className="muted">Lance un tournoi depuis un groupe (3-16 joueurs).</p>
             </div>
             <span className="tile-go">Lancer →</span>
           </section>

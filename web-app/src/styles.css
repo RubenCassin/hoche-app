@@ -222,6 +222,23 @@ input:focus { outline: none; border-color: var(--amber); }
 .setup-players { display: flex; flex-direction: column; gap: 8px; }
 .player-row { display: flex; gap: 8px; }
 .player-row input { flex: 1; }
+.bot-select { background: var(--walnut-up2); border: 1px solid var(--edge); color: var(--cream); padding: 0 10px; font-family: var(--body); font-size: 13px; border-radius: var(--r); }
+
+/* ── Sélecteur de mode ──────────────────────────────────────────────────────── */
+.mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+.mode-card { display: flex; flex-direction: column; gap: 3px; text-align: left; background: var(--walnut-up2); border: 1px solid var(--edge); padding: 10px 12px; }
+.mode-card:hover { background: var(--oak); }
+.mode-card.on { border-color: var(--amber); background: var(--oak); }
+.mode-name { font-family: var(--display); font-size: 17px; text-transform: uppercase; letter-spacing: 0.5px; }
+.mode-desc { font-size: 11px; color: var(--fg3); line-height: 1.25; }
+@media (max-width: 600px) { .mode-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* ── Cricket ─────────────────────────────────────────────────────────────────── */
+.cricket-table th.active-col, .cricket-table td.cricket-mark { text-align: center; }
+.cricket-table .cricket-mark { font-size: 20px; color: var(--amber); }
+.cricket-table tr.dead td { opacity: 0.4; text-decoration: line-through; }
+.cricket-table th.active-col { color: var(--amber); }
+.pscore.dead { opacity: 0.45; }
 
 /* ── Scoreboard ────────────────────────────────────────────────────────────── */
 .play { max-width: 1000px; }
