@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../auth';
-import { getChatUnread } from '../api';
+import { getChatUnread, getNotifications } from '../api';
 import { onLive } from '../live';
 
 const NAV = [
@@ -20,6 +20,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
 
   const { data: unread = 0 } = useQuery({ queryKey: ['chat-unread'], queryFn: getChatUnread, refetchInterval: 30000, enabled: !!user });
+  const { data: notifUnread = 0 } = useQuery({ queryKey: ['notif-unread'], queryFn: () => getNotifications().then((d) => d.unread), refetchInterval: 30000, enabled: !!user });
 
   // Temps réel global : un message/lecture/ajout met à jour les caches chat,
   // un tournament_update rafraîchit le bracket concerné.
@@ -52,6 +53,11 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="brand">
           <span className="brand-mark">◎</span>
           <span className="display brand-word">HOCHE</span>
+          {user && (
+            <NavLink to="/notifications" className="bell" title="Notifications">
+              🔔{notifUnread > 0 && <span className="bell-badge">{notifUnread > 9 ? '9+' : notifUnread}</span>}
+            </NavLink>
+          )}
         </div>
         <nav className="nav">
           {NAV.map((n) => (

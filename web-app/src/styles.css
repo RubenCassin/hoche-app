@@ -338,6 +338,16 @@ input:focus { outline: none; border-color: var(--amber); }
 .conv-badge { background: var(--brick); color: #fff; font-size: 12px; font-weight: 800; min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: 11px; flex-shrink: 0; }
 .search-results { display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow-y: auto; }
 
+/* ── Cloche + notifications ─────────────────────────────────────────────────── */
+.bell { margin-left: auto; position: relative; font-size: 18px; line-height: 1; padding: 4px; }
+.bell:hover { filter: brightness(1.2); }
+.bell-badge { position: absolute; top: -4px; right: -4px; background: var(--brick); color: #fff; font-size: 10px; font-weight: 800; min-width: 16px; height: 16px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
+.notif-row { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--walnut-up); border: 1px solid var(--edge); border-left: 3px solid transparent; }
+.notif-row.unread { border-left-color: var(--amber); background: var(--walnut-up2); }
+.notif-mid { flex: 1; min-width: 0; }
+.notif-text { font-weight: 600; }
+.notif-snip { font-size: 13px; }
+
 /* ── Fil de conversation ────────────────────────────────────────────────────── */
 .chat-page { display: flex; flex-direction: column; }
 .thread { display: flex; flex-direction: column; gap: 6px; padding: 6px 0 16px; min-height: 200px; }

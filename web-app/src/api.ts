@@ -111,6 +111,54 @@ export const searchUsers = (q: string) =>
 export const getFollowingList = () =>
   api.get<SearchUser[]>('/social/following').then((r) => r.data);
 
+// ── Profil joueur / social ────────────────────────────────────────────────────
+export interface Profile {
+  user: User;
+  stats: Stats;
+  counts: { followers: number; following: number };
+  relation: { following: boolean; followsMe: boolean; mutual: boolean; isSelf: boolean; blocked: boolean };
+}
+export const getProfile = (id: number) => api.get<Profile>(`/users/${id}/profile`).then((r) => r.data);
+export const getH2H = (id: number) => api.get<{ played: number; won: number; lost: number }>(`/users/${id}/h2h`).then((r) => r.data);
+export interface EloPoint { elo: number; gameId: number | null; created_at: string }
+export const getEloHistory = (id: number) => api.get<EloPoint[]>(`/users/${id}/elo-history`).then((r) => r.data);
+export const followUser = (id: number) => api.post(`/social/follow/${id}`).then((r) => r.data);
+export const unfollowUser = (id: number) => api.delete(`/social/follow/${id}`).then((r) => r.data);
+export const blockUser = (id: number) => api.post(`/social/block/${id}`).then((r) => r.data);
+export const unblockUser = (id: number) => api.delete(`/social/block/${id}`).then((r) => r.data);
+export const getFollowersOf = (id: number) => api.get<SearchUser[]>(`/social/followers/${id}`).then((r) => r.data);
+export const getFollowingOf = (id: number) => api.get<SearchUser[]>(`/social/following/${id}`).then((r) => r.data);
+
+// ── Défis ─────────────────────────────────────────────────────────────────────
+export interface Challenge {
+  id: number; gameType: string; legsToWin: number; message: string;
+  status: 'pending' | 'accepted' | 'declined'; incoming: boolean;
+  opponentId: number; opponentName: string; created_at: string;
+}
+export const getChallenges = () => api.get<Challenge[]>('/challenges').then((r) => r.data);
+export const createChallenge = (body: { toUserId: number; gameType: string; legsToWin: number; message: string }) =>
+  api.post('/challenges', body).then((r) => r.data);
+export const acceptChallenge = (id: number) => api.post(`/challenges/${id}/accept`).then((r) => r.data);
+export const declineChallenge = (id: number) => api.post(`/challenges/${id}/decline`).then((r) => r.data);
+
+// ── Notifications ──────────────────────────────────────────────────────────────
+export interface NotificationItem {
+  id: number; type: string; actorId: number | null; actorName: string;
+  postId: number | null; postSnippet: string | null; gameId: number | null;
+  badge: string | null; challengeId: number | null;
+  challenge: { gameType: string; legsToWin: number; status: string; pending: boolean } | null;
+  match: { gameType: string; actorWon: boolean; actorLegs: number; oppLegs: number; confirmed: boolean; pending: boolean } | null;
+  read: boolean; created_at: string;
+}
+export const getNotifications = () => api.get<{ unread: number; items: NotificationItem[] }>('/notifications').then((r) => r.data);
+export const markNotificationsRead = () => api.post('/notifications/read').then((r) => r.data);
+
+// ── Posts / commentaires ────────────────────────────────────────────────────────
+export interface Comment { id: number; user_id: number; userName: string; username: string; text: string; created_at: string }
+export const getPost = (id: number) => api.get<FeedItem>(`/posts/${id}`).then((r) => r.data);
+export const getComments = (id: number) => api.get<Comment[]>(`/posts/${id}/comments`).then((r) => r.data);
+export const addComment = (id: number, text: string) => api.post(`/posts/${id}/comment`, { text }).then((r) => r.data);
+
 // ── Chat ──────────────────────────────────────────────────────────────────────
 export type MsgKind = 'text' | 'match_invite' | 'tournament';
 export interface ChatMessage {

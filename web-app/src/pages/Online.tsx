@@ -65,7 +65,7 @@ export function Online() {
             </thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={r.id} className={r.id === user?.id ? 'me' : ''}>
+                <tr key={r.id} className={r.id === user?.id ? 'me' : ''} style={{ cursor: 'pointer' }} onClick={() => navigate(`/user/${r.id}`)}>
                   <td className="rank">{i + 1}</td>
                   <td><div className="lb-name">{r.name}{r.flags >= 3 ? ' ⚠' : ''}</div><div className="muted lb-user">{r.username}</div></td>
                   <td className="num mono lb-val">{fmt(r, metric)}</td>

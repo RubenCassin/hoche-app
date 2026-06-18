@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getFeed, createPost, likePost, type FeedItem } from '../api';
 
@@ -12,6 +13,7 @@ function timeAgo(iso: string): string {
 
 export function Feed() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [scope, setScope] = useState<'foryou' | 'friends'>('foryou');
   const [text, setText] = useState('');
   const [posting, setPosting] = useState(false);
@@ -56,17 +58,17 @@ export function Feed() {
           {data.map((it) => (
             <div key={it.id} className="card feed-item">
               <div className="feed-top">
-                <span className="feed-author">{it.userName}</span>
+                <span className="feed-author" style={{ cursor: 'pointer' }} onClick={() => navigate(`/user/${it.user_id}`)}>{it.userName}</span>
                 <span className="muted feed-user">{it.username}</span>
                 <span className="muted feed-time">· {timeAgo(it.created_at)}</span>
               </div>
               {it.kind === 'post' ? (
                 <>
                   <div className="feed-text">{it.text}</div>
-                  <button className="like-btn" onClick={() => like(it)}>
-                    {it.liked ? '❤️' : '🤍'} {it.likeCount ?? 0}
-                    {(it.commentCount ?? 0) > 0 && <span className="muted"> · 💬 {it.commentCount}</span>}
-                  </button>
+                  <div style={{ display: 'flex', gap: 14 }}>
+                    <button className="like-btn" onClick={() => like(it)}>{it.liked ? '❤️' : '🤍'} {it.likeCount ?? 0}</button>
+                    {it.postId && <button className="like-btn" onClick={() => navigate(`/post/${it.postId}`)}>💬 {it.commentCount ?? 0}</button>}
+                  </div>
                 </>
               ) : (
                 <div className="feed-match">

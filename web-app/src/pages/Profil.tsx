@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getStats, getFollowCounts, updateMe, apiError } from '../api';
 import { useAuth } from '../auth';
+import { BADGES } from '../badges';
 
 export function Profil() {
   const { user, setUser, signOut } = useAuth();
+  const navigate = useNavigate();
   const { data: stats } = useQuery({ queryKey: ['stats', user?.id], queryFn: () => getStats(user!.id), enabled: !!user });
   const { data: counts } = useQuery({ queryKey: ['counts', user?.id], queryFn: () => getFollowCounts(user!.id), enabled: !!user });
 
@@ -47,12 +50,42 @@ export function Profil() {
         </div>
       </div>
 
+      <div className="chip-row" style={{ marginTop: 12 }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/notifications')}>🔔 Notifications</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/challenges')}>🎯 Défis</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/stats')}>📊 Stats détaillées</button>
+      </div>
+
       <div className="stat-row" style={{ marginTop: 16 }}>
         <Stat label="Moyenne" value={stats?.three_dart_avg ?? 0} accent />
         <Stat label="180s" value={stats?.total_180s ?? 0} />
         <Stat label="Victoires" value={`${stats?.win_pct ?? 0}%`} />
         <Stat label="High CO" value={stats?.highest_checkout ?? 0} />
       </div>
+
+      {stats && (
+        <>
+          <h3 className="display section-title">Badges ({BADGES.filter((b) => b.test(stats)).length}/{BADGES.length})</h3>
+          <div className="drill-grid">
+            {BADGES.map((b) => {
+              const got = b.test(stats);
+              const { value, goal } = b.progress(stats);
+              return (
+                <div key={b.id} className="card drill-card" style={{ borderLeftColor: got ? 'var(--amber)' : 'var(--edge)', opacity: got ? 1 : 0.7 }}>
+                  <div className="drill-top"><span className="drill-name">{got ? '🏅' : '🔒'} {b.name}</span></div>
+                  <div className="drill-desc">{b.how}</div>
+                  {!got && (
+                    <>
+                      <div className="progress-track" style={{ marginTop: 6, marginBottom: 4 }}><div className="progress-fill" style={{ width: `${Math.min(100, (value / goal) * 100)}%` }} /></div>
+                      <div className="muted" style={{ fontSize: 12 }}>{Math.min(value, goal)} / {goal}</div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       <h3 className="display section-title">Modifier le profil</h3>
       <div className="form-grid">

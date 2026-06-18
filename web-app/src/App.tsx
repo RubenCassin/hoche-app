@@ -15,6 +15,10 @@ import { Direct } from './pages/Direct';
 import { Messages } from './pages/Messages';
 import { Conversation } from './pages/Conversation';
 import { Tournament } from './pages/Tournament';
+import { UserProfile } from './pages/UserProfile';
+import { Notifications } from './pages/Notifications';
+import { Challenges } from './pages/Challenges';
+import { PostDetail } from './pages/PostDetail';
 
 export function App() {
   const { user, guest, loading } = useAuth();
@@ -40,6 +44,10 @@ export function App() {
         <Route path="/messages/:id" element={gated(<Conversation />, 'Messages', 'La messagerie est réservée aux comptes.')} />
         <Route path="/tournament/:id" element={gated(<Tournament />, 'Tournoi', 'Les tournois en ligne sont réservés aux comptes.')} />
         <Route path="/feed" element={gated(<Feed />, 'Feed', 'Le fil social est réservé aux comptes.')} />
+        <Route path="/post/:id" element={gated(<PostDetail />, 'Post', 'Le fil social est réservé aux comptes.')} />
+        <Route path="/user/:id" element={gated(<UserProfile />, 'Profil', 'Les profils joueurs sont réservés aux comptes.')} />
+        <Route path="/notifications" element={gated(<Notifications />, 'Notifications', 'Réservé aux comptes.')} />
+        <Route path="/challenges" element={gated(<Challenges />, 'Défis', 'Les défis sont réservés aux comptes.')} />
         <Route path="/stats" element={gated(<StatsPage />, 'Stats', 'Crée un compte pour suivre tes statistiques au fil des parties.')} />
         <Route path="/profil" element={gated(<Profil />, 'Profil', 'Crée un compte pour personnaliser ton profil.')} />
         <Route path="*" element={<Navigate to="/" replace />} />
