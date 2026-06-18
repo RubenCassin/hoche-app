@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getStats, getFollowCounts, updateMe, apiError } from '../api';
 import { useAuth } from '../auth';
 import { BADGES } from '../badges';
+import { getFavorites, toggleFavorite } from '../favorites';
 
 export function Profil() {
   const { user, setUser, signOut } = useAuth();
@@ -17,6 +18,7 @@ export function Profil() {
   const [newPw, setNewPw] = useState('');
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [favs, setFavs] = useState<number[]>(getFavorites());
 
   const initials = (user?.name || '?').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
@@ -53,7 +55,8 @@ export function Profil() {
       <div className="chip-row" style={{ marginTop: 12 }}>
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/notifications')}>🔔 Notifications</button>
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/challenges')}>🎯 Défis</button>
-        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/stats')}>📊 Stats détaillées</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/historique')}>📜 Historique</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/stats')}>📊 Stats</button>
       </div>
 
       <div className="stat-row" style={{ marginTop: 16 }}>
@@ -86,6 +89,18 @@ export function Profil() {
           </div>
         </>
       )}
+
+      <h3 className="display section-title">Doubles préférés</h3>
+      <div className="card">
+        <p className="muted" style={{ marginTop: 0 }}>La suggestion de checkout privilégie ces doubles quand c'est possible sans rallonger la finition.</p>
+        <div className="fav-grid">
+          {[...Array(20)].map((_, i) => {
+            const seg = i + 1; const on = favs.includes(seg);
+            return <button key={seg} className={'fav-cell' + (on ? ' on' : '')} onClick={() => setFavs(toggleFavorite(seg))}>D{seg}</button>;
+          })}
+          <button className={'fav-cell' + (favs.includes(25) ? ' on' : '')} onClick={() => setFavs(toggleFavorite(25))}>Bull</button>
+        </div>
+      </div>
 
       <h3 className="display section-title">Modifier le profil</h3>
       <div className="form-grid">

@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { saveGame, type GameResult } from '../api';
 import { X01Game } from '../components/X01Game';
@@ -23,6 +24,7 @@ interface Slot { name: string; bot: string | null }
 
 export function Play() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [gameType, setGameType] = useState<GameType>('x01');
   const [started, setStarted] = useState(false);
 
@@ -57,7 +59,10 @@ export function Play() {
 
   return (
     <div className="page">
-      <h1 className="display page-title">Nouvelle partie</h1>
+      <div className="play-head" style={{ marginBottom: 8 }}>
+        <h1 className="display page-title" style={{ margin: 0 }}>Nouvelle partie</h1>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/tournoi-local')}>🏆 Tournoi local</button>
+      </div>
       <div className="card setup" style={{ maxWidth: 620 }}>
         <Row label="Mode de jeu">
           <div className="mode-grid">

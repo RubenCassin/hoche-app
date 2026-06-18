@@ -19,6 +19,9 @@ import { UserProfile } from './pages/UserProfile';
 import { Notifications } from './pages/Notifications';
 import { Challenges } from './pages/Challenges';
 import { PostDetail } from './pages/PostDetail';
+import { History } from './pages/History';
+import { GameReplay } from './pages/GameReplay';
+import { LocalTournament } from './pages/LocalTournament';
 
 export function App() {
   const { user, guest, loading } = useAuth();
@@ -48,6 +51,9 @@ export function App() {
         <Route path="/user/:id" element={gated(<UserProfile />, 'Profil', 'Les profils joueurs sont réservés aux comptes.')} />
         <Route path="/notifications" element={gated(<Notifications />, 'Notifications', 'Réservé aux comptes.')} />
         <Route path="/challenges" element={gated(<Challenges />, 'Défis', 'Les défis sont réservés aux comptes.')} />
+        <Route path="/historique" element={gated(<History />, 'Historique', "L'historique de tes parties est réservé aux comptes.")} />
+        <Route path="/game/:id" element={gated(<GameReplay />, 'Partie', 'Réservé aux comptes.')} />
+        <Route path="/tournoi-local" element={<LocalTournament />} />
         <Route path="/stats" element={gated(<StatsPage />, 'Stats', 'Crée un compte pour suivre tes statistiques au fil des parties.')} />
         <Route path="/profil" element={gated(<Profil />, 'Profil', 'Crée un compte pour personnaliser ton profil.')} />
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { liveConnect, onLive, liveSend, liveReady } from '../live';
 import { sendMessage } from '../api';
 import { checkout } from '../game/x01';
+import { getFavorites } from '../favorites';
 import { DartGrid } from '../components/DartGrid';
 
 type Phase = 'connecting' | 'idle' | 'waiting' | 'playing';
@@ -140,7 +141,7 @@ export function Direct() {
   const me = gs.you; const isOver = gs.winner !== null; const myTurn = gs.turn === me && !isOver;
   const visitTotal = visit.reduce((s, d) => s + d.points, 0);
   const coRem = gs.remaining[me] - (mode === 'grid' ? visitTotal : 0);
-  const co = myTurn ? checkout(coRem, gs.config.finishMode !== 'simple') : null;
+  const co = myTurn ? checkout(coRem, gs.config.finishMode !== 'simple', getFavorites()) : null;
 
   return (
     <div className="page play">

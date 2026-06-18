@@ -94,6 +94,7 @@ export const fetchMe = () => api.get<User>('/auth/me').then((r) => r.data);
 export const getStats = (id: number) => api.get<Stats>(`/users/${id}/stats`).then((r) => r.data);
 
 // ── Sauvegarde de partie (local → backend, pour stats/historique/feed) ───────
+export interface GameVisit { total: number; bust: boolean; darts: string[] }
 export interface GameResult {
   gameType: 'x01' | 'cricket' | 'atc' | 'killer' | 'shanghai' | 'halveit';
   matchWon: boolean;
@@ -101,8 +102,18 @@ export interface GameResult {
   opponents?: string[];
   dartsThrown?: number; avg?: number; total180s?: number;
   highestCheckout?: number; score?: number; startScore?: number;
+  visits?: GameVisit[];
 }
-export const saveGame = (r: GameResult) => api.post('/games', r).then((res) => res.data);
+export const saveGame = (r: GameResult) => api.post('/games', r).then((res) => res.data as Game);
+
+// ── Historique / replays ────────────────────────────────────────────────────
+export interface Game {
+  id: number; gameType: string; matchWon: boolean; legsWon: number; legsPlayed: number;
+  opponents: string[]; dartsThrown: number; avg: number; total180s: number; highestCheckout: number;
+  score: number; startScore: number; visits: GameVisit[]; online: boolean; finished_at: string;
+}
+export const getGames = () => api.get<Game[]>('/games').then((r) => r.data);
+export const getGame = (id: number) => api.get<Game>(`/games/${id}`).then((r) => r.data);
 
 // ── Recherche / amis ────────────────────────────────────────────────────────
 export interface SearchUser extends User { isFollowing?: boolean; mutual?: boolean }

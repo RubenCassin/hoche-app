@@ -105,18 +105,24 @@ const FIRST_DARTS: number[] = (() => {
   return t;
 })();
 
-export function checkout(remaining: number, doubleOut: boolean): string[] | null {
+export function checkout(remaining: number, doubleOut: boolean, favorites?: number[]): string[] | null {
   if (doubleOut) {
     if (remaining < 2 || remaining > 170) return null;
+    // Ordre des doubles finisseurs, biaisé vers les doubles préférés (sans
+    // jamais rallonger : on garde le même nombre de fléchettes).
+    const favVals = (favorites ?? []).map((s) => (s === 25 ? 50 : s * 2));
+    const finishOrder = favVals.length
+      ? [...FINISH_VALUES.filter((v) => favVals.includes(v)), ...FINISH_VALUES.filter((v) => !favVals.includes(v))]
+      : FINISH_VALUES;
     // 1 fléchette
     if (DBL[remaining]) return [DBL[remaining]];
     // 2 fléchettes
-    for (const f of FINISH_VALUES) {
+    for (const f of finishOrder) {
       const r1 = remaining - f;
       if (r1 >= 1 && SETUP[r1]) return [SETUP[r1], DBL[f]];
     }
     // 3 fléchettes
-    for (const f of FINISH_VALUES) {
+    for (const f of finishOrder) {
       for (const s1 of FIRST_DARTS) {
         const r2 = remaining - f - s1;
         if (r2 >= 1 && SETUP[r2]) return [SETUP[s1] ?? `${s1}`, SETUP[r2], DBL[f]];

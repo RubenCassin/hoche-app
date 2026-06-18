@@ -5,6 +5,9 @@ import { DartGrid } from './DartGrid';
 import type { Dart } from '../game/modes';
 import type { GameResult } from '../api';
 import { play } from '../sound';
+import { getFavorites, hasFavorite } from '../favorites';
+
+function favSeg(d: string): number { return d === 'BULL' ? 25 : d.startsWith('D') ? parseInt(d.slice(1), 10) : -1; }
 
 function dlabel(d: Dart): string {
   if (d.segment === 0) return 'M';
@@ -25,11 +28,16 @@ export function X01Game({ roster, config, onExit, onFinish }: {
   const [liveVisit, setLiveVisit] = useState<Dart[]>([]);
   const finishedRef = useRef(false);
   const s180 = useRef(0);
+  const visitsLog = useRef<{ total: number; bust: boolean; darts: string[] }[]>([]);
 
   const submit = (total: number) => {
     if (total === 180) s180.current += 1;
     setState((s) => {
       if (s.winner !== null) return s;
+      const p = s.players[s.turn];
+      const projected = p.remaining - total;
+      const bust = projected < 0 || (s.config.doubleOut && projected === 1);
+      visitsLog.current.push({ total: bust ? 0 : total, bust, darts: [] });
       setHistory((h) => [...h, s]);
       return addVisit(s, total);
     });
@@ -48,6 +56,7 @@ export function X01Game({ roster, config, onExit, onFinish }: {
           opponents: state.players.filter((_, i) => i !== 0).map((p) => p.name),
           dartsThrown: p0.darts, avg: avg3(p0), total180s: s180.current,
           score: state.config.startScore, startScore: state.config.startScore,
+          visits: visitsLog.current,
         });
       }
       return;
@@ -89,7 +98,7 @@ export function X01Game({ roster, config, onExit, onFinish }: {
   const me = state.players[state.turn];
   const isBotTurn = !!roster[state.turn]?.bot;
   const coRemaining = me.remaining - (inputMode === 'grid' ? liveTotal : 0);
-  const co = state.winner === null ? checkout(coRemaining, state.config.doubleOut) : null;
+  const co = state.winner === null ? checkout(coRemaining, state.config.doubleOut, getFavorites()) : null;
   const isOver = state.winner !== null;
   const submitEntry = () => { const t = parseInt(entry, 10); if (!isNaN(t)) submit(t); };
 
@@ -124,7 +133,7 @@ export function X01Game({ roster, config, onExit, onFinish }: {
           <div className="co-line">
             {state.event === 'bust' && <span className="bust-tag">BUST</span>}
             {state.event === '180' && <span className="amber-tag">💥 180 !</span>}
-            {co ? <><span className="muted">Checkout :</span> {co.map((d, k) => <span key={k} className={'co-pill' + (d.startsWith('D') || d === 'BULL' ? ' dbl' : '')}>{d}</span>)}</> : null}
+            {co ? <><span className="muted">Checkout :</span> {co.map((d, k) => { const fav = hasFavorite(favSeg(d)); return <span key={k} className={'co-pill' + (d.startsWith('D') || d === 'BULL' ? ' dbl' : '') + (fav ? ' fav' : '')}>{fav ? '★ ' : ''}{d}</span>; })}</> : null}
           </div>
           {isBotTurn ? (
             <div className="turn-line muted"><b>{me.name}</b> réfléchit… 🤖</div>
