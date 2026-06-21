@@ -57,6 +57,7 @@ export function Profil() {
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/challenges')}>🎯 Défis</button>
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/historique')}>📜 Historique</button>
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/stats')}>📊 Stats</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/bloques')}>🚫 Bloqués</button>
       </div>
 
       <div className="stat-row" style={{ marginTop: 16 }}>

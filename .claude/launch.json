@@ -12,6 +12,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["backend/preview-server.js"],
       "port": 3199
+    },
+    {
+      "name": "webapp-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "web-app", "--", "--port", "5180", "--strictPort"],
+      "port": 5180
     }
   ]
 }

@@ -31,6 +31,7 @@ export function Play() {
   // options
   const [startScore, setStartScore] = useState(501);
   const [legsToWin, setLegsToWin] = useState(3);
+  const [setsToWin, setSetsToWin] = useState(1);
   const [doubleOut, setDoubleOut] = useState(true);
   const [cutThroat, setCutThroat] = useState(false);
   const [advanceByMarks, setAdvanceByMarks] = useState(false);
@@ -52,7 +53,7 @@ export function Play() {
   if (started) {
     const roster = slots.map((s) => ({ name: s.name.trim() || 'Joueur', bot: s.bot }));
     if (gameType === 'x01') {
-      return <X01Game roster={roster} config={{ startScore, legsToWin, doubleOut }} onExit={() => setStarted(false)} onFinish={onFinish} />;
+      return <X01Game roster={roster} config={{ startScore, legsToWin, doubleOut, setsToWin }} onExit={() => setStarted(false)} onFinish={onFinish} />;
     }
     return <ModeGame gameType={gameType} roster={roster} config={{ cutThroat, advanceByMarks, startLives, shanghaiRounds }} onExit={() => setStarted(false)} onFinish={onFinish} />;
   }
@@ -78,7 +79,8 @@ export function Play() {
         {gameType === 'x01' && (
           <>
             <Row label="Score">{VARIANTS.map((v) => <button key={v} className={'chip' + (startScore === v ? ' on' : '')} onClick={() => setStartScore(v)}>{v}</button>)}</Row>
-            <Row label="Legs (premier à)">{LEGS.map((v) => <button key={v} className={'chip' + (legsToWin === v ? ' on' : '')} onClick={() => setLegsToWin(v)}>{v}</button>)}</Row>
+            <Row label="Sets (premier à)">{[1, 3, 5].map((v) => <button key={v} className={'chip' + (setsToWin === v ? ' on' : '')} onClick={() => setSetsToWin(v)}>{v}</button>)}</Row>
+            <Row label={setsToWin > 1 ? 'Legs par set (premier à)' : 'Legs (premier à)'}>{LEGS.map((v) => <button key={v} className={'chip' + (legsToWin === v ? ' on' : '')} onClick={() => setLegsToWin(v)}>{v}</button>)}</Row>
             <Row label="Sortie"><button className={'chip' + (doubleOut ? ' on' : '')} onClick={() => setDoubleOut(true)}>Double</button><button className={'chip' + (!doubleOut ? ' on' : '')} onClick={() => setDoubleOut(false)}>Simple</button></Row>
           </>
         )}

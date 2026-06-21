@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { DartGrid } from './DartGrid';
+import { Dartboard } from './Dartboard';
+import { MomentOverlay } from './MomentOverlay';
 import {
   createGame, commitVisit, pushDart, popDart, currentRoundLabel,
   CRICKET_TARGETS, isCricketTargetDead, atcCurrentTarget, ATC_SEQUENCE,
@@ -35,9 +37,11 @@ export function ModeGame({ gameType, roster, config, onExit, onFinish }: {
   onFinish?: (r: GameResult) => void;
 }) {
   const [state, setState] = useState<ModeState>(() => createGame(gameType, roster, config));
+  const [modeInput, setModeInput] = useState<'grid' | 'board'>('grid');
+  const [plays, setPlays] = useState(0);
   const finishedRef = useRef(false);
 
-  const commit = () => setState((s) => commitVisit(s));
+  const commit = () => { setState((s) => commitVisit(s)); setPlays((p) => p + 1); };
 
   // Auto-commit à 3 fléchettes (humain).
   useEffect(() => { if (state.visit.length >= 3) { const t = setTimeout(commit, 150); return () => clearTimeout(t); } }, [state.visit.length]);
@@ -57,7 +61,7 @@ export function ModeGame({ gameType, roster, config, onExit, onFinish }: {
     }
     if (!state.players[state.turn]?.bot) return;
     const darts = botDartsFor(state);
-    const t = setTimeout(() => setState((s) => commitVisit({ ...s, visit: darts.slice(0, 3) })), 850);
+    const t = setTimeout(() => { setState((s) => commitVisit({ ...s, visit: darts.slice(0, 3) })); setPlays((p) => p + 1); }, 850);
     return () => clearTimeout(t);
   }, [state.turn, state.winner, state.round]);
 
@@ -77,6 +81,7 @@ export function ModeGame({ gameType, roster, config, onExit, onFinish }: {
 
   return (
     <div className="page play">
+      <MomentOverlay event={state.winner !== null ? 'win' : state.event} nonce={plays} />
       <div className="play-head">
         <div className="muted mono">{TITLES[gameType]}{currentRoundLabel(state) ? ' · ' + currentRoundLabel(state) : ''}{gameType === 'cricket' && state.config.cutThroat ? ' · cut-throat' : ''}</div>
         <button className="btn btn-ghost btn-sm" onClick={onExit}>Quitter</button>
@@ -101,11 +106,17 @@ export function ModeGame({ gameType, roster, config, onExit, onFinish }: {
           ) : (
             <>
               <div className="turn-line"><b>{me.name}</b> — à toi de jouer</div>
+              <div className="seg" style={{ maxWidth: 280, marginBottom: 12 }}>
+                <button className={'seg-btn' + (modeInput === 'grid' ? ' on' : '')} onClick={() => setModeInput('grid')}>Grille</button>
+                <button className={'seg-btn' + (modeInput === 'board' ? ' on' : '')} onClick={() => setModeInput('board')}>Cible</button>
+              </div>
               <div className="visit-strip">
                 {[0, 1, 2].map((i) => <span key={i} className={'visit-slot' + (state.visit[i] ? ' filled' : '')}>{state.visit[i] ? dlabel(state.visit[i]) : '—'}</span>)}
                 {state.visit.length > 0 && <button className="btn btn-amber btn-sm visit-total" onClick={commit}>Valider la volée</button>}
               </div>
-              <DartGrid onDart={onDart} onUndo={state.visit.length ? () => setState((s) => popDart(s)) : undefined} />
+              {modeInput === 'grid'
+                ? <DartGrid onDart={onDart} onUndo={state.visit.length ? () => setState((s) => popDart(s)) : undefined} />
+                : <Dartboard onDart={onDart} onUndo={state.visit.length ? () => setState((s) => popDart(s)) : undefined} />}
             </>
           )}
         </>

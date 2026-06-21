@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getLeaderboard, type LbScope, type LbRow } from '../api';
+import { getLeaderboard, getLiveMatches, getOnlineFriends, type LbScope, type LbRow } from '../api';
 import { useAuth } from '../auth';
 
 const SCOPES: { key: LbScope; label: string }[] = [
@@ -27,6 +27,8 @@ export function Online() {
   const [scope, setScope] = useState<LbScope>('world');
   const [metric, setMetric] = useState<Metric>('elo');
   const { data, isLoading } = useQuery({ queryKey: ['lb', scope], queryFn: () => getLeaderboard(scope) });
+  const { data: friends = [] } = useQuery({ queryKey: ['friends-online'], queryFn: getOnlineFriends, refetchInterval: 15000, enabled: !!user });
+  const { data: live = [] } = useQuery({ queryKey: ['live-matches'], queryFn: getLiveMatches, refetchInterval: 15000, enabled: !!user });
 
   const rows = (data ?? [])
     .filter((r) => metric !== 'elo' || r.elo_games > 0)
@@ -39,6 +41,39 @@ export function Online() {
         <h1 className="display page-title" style={{ margin: 0 }}>Classement</h1>
         <button className="btn btn-primary" onClick={() => navigate('/direct')}>🔴 Jouer en direct</button>
       </div>
+
+      {friends.length > 0 && (
+        <div className="presence-strip">
+          <div className="eyebrow" style={{ color: 'var(--win)' }}>● {friends.length} ami{friends.length > 1 ? 's' : ''} en ligne</div>
+          <div className="presence-row">
+            {friends.map((f) => (
+              <button key={f.id} className="presence-chip" title={`Défier ${f.name}`}
+                onClick={() => navigate(`/direct?invite=${f.id}&name=${encodeURIComponent(f.name)}`)}>
+                <span className="avatar-sm">{(f.name || '?').slice(0, 2).toUpperCase()}</span>
+                <span className="presence-name">{f.name}</span>
+                <span className="presence-go">⚔️</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {live.length > 0 && (
+        <div className="live-strip">
+          <div className="eyebrow" style={{ color: 'var(--brick)' }}>🔴 En direct maintenant</div>
+          <div className="live-list">
+            {live.map((m) => (
+              <button key={m.code} className="live-row" onClick={() => navigate(`/direct?spectate=${m.code}`)}>
+                <div className="live-mid">
+                  <div className="live-names">{m.names.join(' vs ')}</div>
+                  <div className="muted mono live-meta">{m.config.startScore} · {m.legs.join('–')}{m.spectators > 0 ? ` · ${m.spectators}👁` : ''}</div>
+                </div>
+                <span className="live-watch">👁 Regarder</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="toolbar">
         <div className="seg">

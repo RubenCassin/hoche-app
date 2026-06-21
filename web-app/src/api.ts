@@ -33,12 +33,20 @@ export interface Stats {
   legs_played: number; legs_won: number;
   three_dart_avg: number; first9_avg: number; best_game_avg: number;
   total_180s: number; highest_checkout: number;
-  checkout_pct: number; doubles_hit: number;
-  best_win_streak: number;
+  checkout_pct: number; checkout_hits: number; checkout_attempts: number; doubles_hit: number;
+  best_win_streak: number; current_win_streak: number; most_180s_game: number;
   scores_60: number; scores_100: number; scores_140: number; highest_score: number;
   darts_per_leg: number; best_leg: number;
   avg_history: number[];
+  heatmap: Record<string, number>;
+  by_game_type: Record<string, { played: number; won: number }>;
 }
+
+// ── Géolocalisation (alimente le classement Pays/Europe) ─────────────────────
+export interface LocationInput { country: string | null; countryCode: string | null; region: string | null; city: string | null }
+export const updateLocation = (loc: LocationInput) => api.post<User>('/auth/location', loc).then((r) => r.data);
+// Liste des joueurs que J'AI bloqués.
+export const getBlocked = () => api.get<SearchUser[]>('/social/blocked').then((r) => r.data);
 
 export type LbScope = 'world' | 'europe' | 'country' | 'friends';
 export interface LbRow {
@@ -131,6 +139,16 @@ export interface Profile {
 }
 export const getProfile = (id: number) => api.get<Profile>(`/users/${id}/profile`).then((r) => r.data);
 export const getH2H = (id: number) => api.get<{ played: number; won: number; lost: number }>(`/users/${id}/h2h`).then((r) => r.data);
+
+// ── Présence / parties en direct (mode spectateur + amis en ligne) ───────────
+export interface LiveMatch {
+  code: string; names: string[];
+  config: { startScore: number; legsToWin: number; finishMode: string };
+  legs: number[]; spectators: number;
+}
+export const getLiveMatches = () => api.get<LiveMatch[]>('/live/matches').then((r) => r.data);
+export interface OnlinePerson { id: number; name: string; username: string; countryCode: string | null }
+export const getOnlineFriends = () => api.get<OnlinePerson[]>('/live/friends-online').then((r) => r.data);
 export interface EloPoint { elo: number; gameId: number | null; created_at: string }
 export const getEloHistory = (id: number) => api.get<EloPoint[]>(`/users/${id}/elo-history`).then((r) => r.data);
 export const followUser = (id: number) => api.post(`/social/follow/${id}`).then((r) => r.data);

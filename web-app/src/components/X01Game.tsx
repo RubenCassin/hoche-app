@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { initX01, addVisit, avg3, checkout, type X01State, type X01Config } from '../game/x01';
 import { x01BotVisit } from '../game/bots';
 import { DartGrid } from './DartGrid';
+import { Dartboard } from './Dartboard';
+import { MomentOverlay } from './MomentOverlay';
+import { StartDecider } from './StartDecider';
 import type { Dart } from '../game/modes';
 import type { GameResult } from '../api';
 import { play } from '../sound';
@@ -24,23 +27,27 @@ export function X01Game({ roster, config, onExit, onFinish }: {
   const [state, setState] = useState<X01State>(() => initX01(roster.map((r) => r.name), config));
   const [history, setHistory] = useState<X01State[]>([]);
   const [entry, setEntry] = useState('');
-  const [inputMode, setInputMode] = useState<'numpad' | 'grid'>('numpad');
+  const [inputMode, setInputMode] = useState<'numpad' | 'grid' | 'board'>('numpad');
   const [liveVisit, setLiveVisit] = useState<Dart[]>([]);
+  const [deciding, setDeciding] = useState(roster.length >= 2);
+  const [plays, setPlays] = useState(0); // nonce des « moments »
   const finishedRef = useRef(false);
   const s180 = useRef(0);
   const visitsLog = useRef<{ total: number; bust: boolean; darts: string[] }[]>([]);
 
-  const submit = (total: number) => {
+  // En grille/cible on connaît chaque fléchette → on enrichit le replay (`darts`).
+  const submit = (total: number, darts?: string[]) => {
     if (total === 180) s180.current += 1;
     setState((s) => {
       if (s.winner !== null) return s;
       const p = s.players[s.turn];
       const projected = p.remaining - total;
       const bust = projected < 0 || (s.config.doubleOut && projected === 1);
-      visitsLog.current.push({ total: bust ? 0 : total, bust, darts: [] });
+      visitsLog.current.push({ total: bust ? 0 : total, bust, darts: darts ?? [] });
       setHistory((h) => [...h, s]);
       return addVisit(s, total);
     });
+    setPlays((p) => p + 1);
     setEntry(''); setLiveVisit([]);
   };
 
@@ -61,6 +68,7 @@ export function X01Game({ roster, config, onExit, onFinish }: {
       }
       return;
     }
+    if (deciding) return;
     const bot = roster[state.turn]?.bot;
     if (!bot) return;
     const t = setTimeout(() => {
@@ -68,12 +76,12 @@ export function X01Game({ roster, config, onExit, onFinish }: {
       submit(total);
     }, 800);
     return () => clearTimeout(t);
-  }, [state.turn, state.winner, state.players]);
+  }, [state.turn, state.winner, state.players, deciding]);
 
   // Sons d'ambiance sur les événements de volée.
   useEffect(() => {
     if (state.event === '180') play('180');
-    else if (state.event === 'win') play('win');
+    else if (state.event === 'win' || state.event === 'set') play('win');
     else if (state.event === 'leg') play('checkout');
     else if (state.event === 'bust') play('bust');
   }, [state.players]);
@@ -91,7 +99,7 @@ export function X01Game({ roster, config, onExit, onFinish }: {
     const next = [...liveVisit, { points, modifier, segment }];
     const total = next.reduce((s, d) => s + d.points, 0);
     const projected = state.players[state.turn].remaining - total;
-    if (next.length >= 3 || projected <= 0 || (state.config.doubleOut && projected === 1)) submit(total);
+    if (next.length >= 3 || projected <= 0 || (state.config.doubleOut && projected === 1)) submit(total, next.map(dlabel));
     else setLiveVisit(next);
   };
 
@@ -104,8 +112,10 @@ export function X01Game({ roster, config, onExit, onFinish }: {
 
   return (
     <div className="page play">
+      <MomentOverlay event={state.event} nonce={plays} />
+      {deciding && <StartDecider names={roster.map((r) => r.name)} onChoose={(i) => { setState((s) => ({ ...s, turn: i, starter: i })); setDeciding(false); }} />}
       <div className="play-head">
-        <div className="muted mono">X01 {state.config.startScore} · premier à {state.config.legsToWin} · {state.config.doubleOut ? 'double out' : 'simple out'}</div>
+        <div className="muted mono">X01 {state.config.startScore} · {(state.config.setsToWin ?? 1) > 1 ? `${state.config.setsToWin} sets de ${state.config.legsToWin} legs` : `premier à ${state.config.legsToWin}`} · {state.config.doubleOut ? 'double out' : 'simple out'}</div>
         <button className="btn btn-ghost btn-sm" onClick={onExit}>Quitter</button>
       </div>
 
@@ -115,7 +125,7 @@ export function X01Game({ roster, config, onExit, onFinish }: {
             <div className="pscore-name">{p.name}{roster[i]?.bot ? ' 🤖' : ''}{state.winner === i ? ' 🏆' : ''}</div>
             <div className="display pscore-rem">{p.remaining}</div>
             <div className="pscore-meta mono">
-              <span>{'●'.repeat(p.legs)}<span className="muted">{'○'.repeat(Math.max(0, state.config.legsToWin - p.legs))}</span></span>
+              <span>{(state.config.setsToWin ?? 1) > 1 ? `${p.sets}s · ` : ''}{'●'.repeat(p.legs)}<span className="muted">{'○'.repeat(Math.max(0, state.config.legsToWin - p.legs))}</span></span>
               <span className="muted">moy {avg3(p)}</span>
             </div>
           </div>
@@ -133,6 +143,7 @@ export function X01Game({ roster, config, onExit, onFinish }: {
           <div className="co-line">
             {state.event === 'bust' && <span className="bust-tag">BUST</span>}
             {state.event === '180' && <span className="amber-tag">💥 180 !</span>}
+            {state.event === 'set' && <span className="amber-tag">🏆 SET</span>}
             {co ? <><span className="muted">Checkout :</span> {co.map((d, k) => { const fav = hasFavorite(favSeg(d)); return <span key={k} className={'co-pill' + (d.startsWith('D') || d === 'BULL' ? ' dbl' : '') + (fav ? ' fav' : '')}>{fav ? '★ ' : ''}{d}</span>; })}</> : null}
           </div>
           {isBotTurn ? (
@@ -140,9 +151,10 @@ export function X01Game({ roster, config, onExit, onFinish }: {
           ) : (
             <>
               <div className="turn-line"><b>{me.name}</b> — à toi de jouer</div>
-              <div className="seg" style={{ maxWidth: 280, marginBottom: 12 }}>
+              <div className="seg" style={{ maxWidth: 360, marginBottom: 12 }}>
                 <button className={'seg-btn' + (inputMode === 'numpad' ? ' on' : '')} onClick={() => { setInputMode('numpad'); setLiveVisit([]); }}>Numpad</button>
                 <button className={'seg-btn' + (inputMode === 'grid' ? ' on' : '')} onClick={() => { setInputMode('grid'); setEntry(''); }}>Grille</button>
+                <button className={'seg-btn' + (inputMode === 'board' ? ' on' : '')} onClick={() => { setInputMode('board'); setEntry(''); }}>Cible</button>
               </div>
               {inputMode === 'numpad' ? (
                 <div className="numpad-wrap">
@@ -165,7 +177,9 @@ export function X01Game({ roster, config, onExit, onFinish }: {
                     {[0, 1, 2].map((i) => <span key={i} className={'visit-slot' + (liveVisit[i] ? ' filled' : '')}>{liveVisit[i] ? dlabel(liveVisit[i]) : '—'}</span>)}
                     <span className="mono visit-total">Σ {liveTotal}</span>
                   </div>
-                  <DartGrid onDart={onDart} onUndo={liveVisit.length ? () => setLiveVisit((v) => v.slice(0, -1)) : (history.length ? undo : undefined)} />
+                  {inputMode === 'grid'
+                    ? <DartGrid onDart={onDart} onUndo={liveVisit.length ? () => setLiveVisit((v) => v.slice(0, -1)) : (history.length ? undo : undefined)} />
+                    : <Dartboard onDart={onDart} onUndo={liveVisit.length ? () => setLiveVisit((v) => v.slice(0, -1)) : (history.length ? undo : undefined)} />}
                 </>
               )}
             </>

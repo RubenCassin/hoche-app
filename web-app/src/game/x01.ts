@@ -6,11 +6,13 @@ export interface X01Config {
   startScore: number; // 301 | 501 | 701
   legsToWin: number;
   doubleOut: boolean;
+  setsToWin?: number; // best-of-sets (1 = pas de sets, comportement par legs)
 }
 export interface X01Player {
   name: string;
   remaining: number;
   legs: number;
+  sets: number;
   darts: number;
   points: number; // points marqués (pour la moyenne)
 }
@@ -20,13 +22,13 @@ export interface X01State {
   turn: number;
   starter: number;
   winner: number | null;
-  event: 'score' | '180' | 'bust' | 'leg' | 'win' | null;
+  event: 'score' | '180' | 'bust' | 'leg' | 'set' | 'win' | null;
 }
 
 export function initX01(names: string[], config: X01Config): X01State {
   return {
     config,
-    players: names.map((name) => ({ name, remaining: config.startScore, legs: 0, darts: 0, points: 0 })),
+    players: names.map((name) => ({ name, remaining: config.startScore, legs: 0, sets: 0, darts: 0, points: 0 })),
     turn: 0,
     starter: 0,
     winner: null,
@@ -62,9 +64,20 @@ export function addVisit(state: X01State, totalRaw: number): X01State {
   if (checkout) {
     me.legs += 1;
     event = 'leg';
+    const setsToWin = state.config.setsToWin ?? 1;
     if (me.legs >= state.config.legsToWin) {
-      winner = i;
-      event = 'win';
+      // Set remporté.
+      me.sets += 1;
+      if (me.sets >= setsToWin) {
+        winner = i;
+        event = 'win';
+      } else {
+        // Nouveau set : legs remis à zéro pour tout le monde, le départ tourne.
+        event = 'set';
+        players.forEach((pl) => { pl.remaining = state.config.startScore; pl.legs = 0; });
+        starter = (state.starter + 1) % n;
+        turn = starter;
+      }
     } else {
       // Nouveau leg : tout le monde repart, le départ tourne.
       players.forEach((pl) => { pl.remaining = state.config.startScore; });

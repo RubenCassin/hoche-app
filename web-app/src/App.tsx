@@ -22,6 +22,7 @@ import { PostDetail } from './pages/PostDetail';
 import { History } from './pages/History';
 import { GameReplay } from './pages/GameReplay';
 import { LocalTournament } from './pages/LocalTournament';
+import { Blocked } from './pages/Blocked';
 
 export function App() {
   const { user, guest, loading } = useAuth();
@@ -56,6 +57,7 @@ export function App() {
         <Route path="/tournoi-local" element={<LocalTournament />} />
         <Route path="/stats" element={gated(<StatsPage />, 'Stats', 'Crée un compte pour suivre tes statistiques au fil des parties.')} />
         <Route path="/profil" element={gated(<Profil />, 'Profil', 'Crée un compte pour personnaliser ton profil.')} />
+        <Route path="/bloques" element={gated(<Blocked />, 'Bloqués', 'Réservé aux comptes.')} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

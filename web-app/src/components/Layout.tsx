@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../auth';
 import { getChatUnread, getNotifications } from '../api';
 import { onLive } from '../live';
+import { InviteListener } from './InviteListener';
 
 const NAV = [
   { to: '/', label: 'Jouer', icon: '🎯', end: true },
@@ -86,6 +87,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <main className="content">{children}</main>
+      {user && <InviteListener />}
     </div>
   );
 }

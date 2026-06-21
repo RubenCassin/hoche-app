@@ -41,10 +41,14 @@ export function GameReplay() {
       {g.visits.length > 0 ? (
         <div className="card lb-card">
           <table className="lb">
-            <thead><tr><th>#</th><th className="num">Volée</th></tr></thead>
+            <thead><tr><th>#</th><th>Fléchettes</th><th className="num">Volée</th></tr></thead>
             <tbody>
               {g.visits.map((v, i) => (
-                <tr key={i}><td className="rank">{i + 1}</td><td className="num mono">{v.bust ? <span className="bust-tag">BUST</span> : <span className={v.total >= 100 ? 'lb-val' : ''}>{v.total}</span>}</td></tr>
+                <tr key={i}>
+                  <td className="rank">{i + 1}</td>
+                  <td className="mono" style={{ color: 'var(--fg2)', letterSpacing: 1 }}>{v.darts && v.darts.length ? v.darts.join(' · ') : '—'}</td>
+                  <td className="num mono">{v.bust ? <span className="bust-tag">BUST</span> : <span className={v.total >= 100 ? 'lb-val' : ''}>{v.total}</span>}</td>
+                </tr>
               ))}
             </tbody>
           </table>
