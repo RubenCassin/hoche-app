@@ -339,8 +339,8 @@ input:focus { outline: none; border-color: var(--amber); }
 .search-results { display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow-y: auto; }
 
 /* ── Cloche + notifications ─────────────────────────────────────────────────── */
-.bell { margin-left: auto; position: relative; font-size: 18px; line-height: 1; padding: 4px; }
-.bell:hover { filter: brightness(1.2); }
+.bell { margin-left: auto; position: relative; display: inline-flex; align-items: center; justify-content: center; color: var(--cream); padding: 4px; }
+.bell:hover { color: var(--amber); }
 .bell-badge { position: absolute; top: -4px; right: -4px; background: var(--brick); color: #fff; font-size: 10px; font-weight: 800; min-width: 16px; height: 16px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
 .notif-row { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--walnut-up); border: 1px solid var(--edge); border-left: 3px solid transparent; }
 .notif-row.unread { border-left-color: var(--amber); background: var(--walnut-up2); }
@@ -408,6 +408,23 @@ input:focus { outline: none; border-color: var(--amber); }
 .live-names { font-weight: 700; font-size: 15px; color: var(--cream); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .live-meta { font-size: 12px; }
 .live-watch { flex-shrink: 0; font-size: 13px; font-weight: 700; color: var(--brick); text-transform: uppercase; letter-spacing: 1px; }
+
+/* ── Entraînement calcul (QCM checkout) ── */
+.calc-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 520px; margin: 0 auto 12px; }
+.calc-option { background: var(--walnut-up); border: 1px solid var(--edge); color: var(--cream); font-family: var(--mono); font-size: 18px; font-weight: 700; letter-spacing: 1px; padding: 18px 12px; }
+.calc-option:hover:not(:disabled) { border-color: var(--amber); background: var(--walnut-up2); }
+.calc-option.good { background: var(--win); border-color: var(--win); color: #fff; }
+.calc-option.bad { background: var(--brick); border-color: var(--brick); color: #fff; }
+.calc-option:disabled { cursor: default; }
+@media (max-width: 520px) { .calc-options { grid-template-columns: 1fr; } }
+
+/* ── Entraînement perso (drill custom) ── */
+.custom-drill { border-color: var(--amber); display: flex; flex-direction: column; gap: 12px; }
+.custom-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.stepper { display: flex; align-items: center; gap: 12px; }
+.step-btn { width: 40px; height: 40px; background: var(--walnut-up2); border: 1px solid var(--edge); color: var(--cream); font-size: 22px; line-height: 1; }
+.step-btn:hover { border-color: var(--amber); }
+.step-val { min-width: 64px; text-align: center; font-size: 30px; color: var(--amber); }
 
 /* ── Flash « moment » (180 / bust / leg / set / win) ── */
 .moment-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 150; }

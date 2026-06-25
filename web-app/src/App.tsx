@@ -23,12 +23,13 @@ import { History } from './pages/History';
 import { GameReplay } from './pages/GameReplay';
 import { LocalTournament } from './pages/LocalTournament';
 import { Blocked } from './pages/Blocked';
+import { HocheLogo } from './components/Logo';
 
 export function App() {
   const { user, guest, loading } = useAuth();
 
   if (loading) {
-    return <div className="center-screen"><span className="display" style={{ fontSize: 40, color: 'var(--amber)' }}>HOCHE</span></div>;
+    return <div className="center-screen"><HocheLogo vertical markSize={72} wordSize={44} /></div>;
   }
   if (!user && !guest) return <Login />;
 

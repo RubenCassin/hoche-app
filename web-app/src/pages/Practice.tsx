@@ -1,23 +1,70 @@
 import { useState } from 'react';
-import { DRILLS, CATEGORY_LABEL, getDrill, type DrillCategory, type DrillDef, type DrillState } from '../game/drills';
+import { DRILLS, CATEGORY_LABEL, getDrill, customDrillKey, makeCustomCheckoutDrill, type DrillCategory, type DrillDef, type DrillState } from '../game/drills';
 import { getRecords, addResult } from '../game/records';
 import { DartGrid } from '../components/DartGrid';
+import { CalcTrainer } from '../components/CalcTrainer';
 import { useAuth } from '../auth';
 
 const ORDER: DrillCategory[] = ['score', 'doubles', 'checkout', 'parcours'];
+const QUICK_TARGETS = [40, 61, 100, 121, 170];
+const DARTS_CHOICES = [3, 6, 9];
 
 export function Practice() {
   const { user } = useAuth();
   const account = user ? `u${user.id}` : 'guest';
   const [running, setRunning] = useState<DrillDef | null>(null);
+  const [calc, setCalc] = useState(false);
+  const [target, setTarget] = useState(121);
+  const [darts, setDarts] = useState(6);
 
   if (running) return <RunDrill drill={running} account={account} onExit={() => setRunning(null)} />;
+  if (calc) return <CalcTrainer account={account} onExit={() => setCalc(false)} />;
 
   const records = getRecords(account);
+  const calcRec = records['calc_checkout'];
+  const customRec = records[customDrillKey(target, darts)];
+  const bump = (delta: number) => setTarget((t) => Math.max(2, Math.min(180, t + delta)));
   return (
     <div className="page">
       <h1 className="display page-title">Entraînement</h1>
       <p className="muted" style={{ marginTop: -12, marginBottom: 20 }}>Des drills solo pour bosser doubles, checkouts et scoring. Ton record est gardé.</p>
+
+      {/* ── Entraînement perso ── */}
+      <h3 className="display section-title" style={{ marginTop: 0 }}>Perso</h3>
+      <div className="card custom-drill">
+        <p className="muted" style={{ marginTop: 0 }}>Choisis la fermeture à travailler et le nombre de fléchettes par tentative.</p>
+        <div className="custom-row">
+          <span className="field-label" style={{ margin: 0 }}>Fermeture</span>
+          <div className="stepper">
+            <button className="step-btn" onClick={() => bump(-1)}>–</button>
+            <span className="display step-val">{target}</span>
+            <button className="step-btn" onClick={() => bump(1)}>+</button>
+          </div>
+        </div>
+        <div className="chip-row">
+          {QUICK_TARGETS.map((v) => <button key={v} className={'chip' + (target === v ? ' on' : '')} onClick={() => setTarget(v)}>{v}</button>)}
+        </div>
+        <div className="custom-row">
+          <span className="field-label" style={{ margin: 0 }}>Fléchettes</span>
+          <div className="seg" style={{ marginBottom: 0, maxWidth: 200 }}>
+            {DARTS_CHOICES.map((d) => <button key={d} className={'seg-btn' + (darts === d ? ' on' : '')} onClick={() => setDarts(d)}>{d}</button>)}
+          </div>
+        </div>
+        <div className="custom-row">
+          <span className="mono" style={{ color: customRec ? 'var(--amber)' : 'var(--fg3)', fontSize: 13 }}>{customRec ? `★ Record : ${customRec.best} / 10` : 'Aucun essai'}</span>
+          <span className="mono muted" style={{ fontSize: 13 }}>{target} en {darts} fl.</span>
+        </div>
+        <button className="btn btn-amber" onClick={() => setRunning(makeCustomCheckoutDrill(target, darts))}>Jouer →</button>
+      </div>
+
+      {/* ── Entraînement calcul (sans fléchettes) ── */}
+      <h3 className="display section-title">Calcul</h3>
+      <button className="card drill-card" onClick={() => setCalc(true)} style={{ textAlign: 'left', width: '100%' }}>
+        <div className="drill-top"><span className="drill-name">🧮 Calcul de checkout</span><span className="tile-go">Jouer →</span></div>
+        <p className="muted drill-desc">Sans fléchettes : 10 questions, trouve la bonne combinaison pour fermer le score affiché. Idéal pour bosser les finitions de tête.</p>
+        <div className="mono drill-rec">{calcRec ? `★ Record : ${calcRec.best} / 10` : 'Aucun essai'}</div>
+      </button>
+
       {ORDER.map((cat) => {
         const drills = DRILLS.filter((d) => d.category === cat);
         return (

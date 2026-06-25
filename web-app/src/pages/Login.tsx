@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { login, register, apiError } from '../api';
 import { useAuth } from '../auth';
+import { OcheMark } from '../components/Logo';
 
 export function Login() {
   const { signIn, continueAsGuest } = useAuth();
@@ -29,7 +30,8 @@ export function Login() {
   return (
     <div className="login-wrap">
       <div className="login-hero">
-        <div className="eyebrow">Fléchettes · bar &amp; soirée</div>
+        <OcheMark size={72} />
+        <div className="eyebrow" style={{ marginTop: 14 }}>Fléchettes · bar &amp; soirée</div>
         <h1 className="display login-title">HOCHE</h1>
         <p className="muted login-tag">
           Le tableau de score nouvelle génération. X01, Cricket, tournois, online — sur grand écran comme dans ta poche.

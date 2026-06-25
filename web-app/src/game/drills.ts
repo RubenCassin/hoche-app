@@ -196,3 +196,43 @@ export const DRILLS: DrillDef[] = [
 export function getDrill(key: string): DrillDef | undefined {
   return DRILLS.find((d) => d.key === key);
 }
+
+// ── Drill perso : fermeture cible + nb de fléchettes/tentative (porté du mobile) ─
+// 10 tentatives, on compte les fermetures réussies. Record propre à chaque combo.
+export function customDrillKey(target: number, darts: number): string {
+  return `custom_c${target}_d${darts}`;
+}
+
+export function makeCustomCheckoutDrill(target: number, dartsPerAttempt: number): DrillDef {
+  const ROUNDS = 10;
+  const t = Math.max(2, Math.min(501, Math.floor(target)));
+  const dpa = Math.max(1, Math.min(9, Math.floor(dartsPerAttempt)));
+  return {
+    key: customDrillKey(t, dpa),
+    name: `Perso · ${t} en ${dpa} fl.`,
+    desc: `Ferme ${t} en ${dpa} fléchette${dpa > 1 ? 's' : ''} max (sortie au double). 10 tentatives.`,
+    unit: 'checkouts', rounds: ROUNDS, category: 'checkout',
+    init: () => ({ done: false, round: 0, dartsThisRound: 0, attemptDarts: 0, hits: 0, target: t, remaining: t }),
+    applyDart: (s, d) => {
+      const ns: DrillState = { ...s };
+      ns.remaining -= d.points;
+      ns.attemptDarts += 1;
+      ns.dartsThisRound = ns.attemptDarts % 3;
+      let over = false, ok = false;
+      if (ns.remaining === 0) { ok = isValidFinish(d); over = true; }
+      else if (ns.remaining < 0 || ns.remaining === 1) over = true;
+      else if (ns.attemptDarts >= dpa) over = true;
+      if (over) {
+        if (ok) ns.hits += 1;
+        ns.round += 1; ns.attemptDarts = 0; ns.dartsThisRound = 0; ns.remaining = t;
+        if (ns.round >= ROUNDS) ns.done = true;
+      }
+      return ns;
+    },
+    prompt: (s) => (s.done ? '—' : s.remaining === t ? `Ferme ${t}` : `Reste ${s.remaining}`),
+    progress: (s) => `Tentative ${Math.min(s.round + 1, ROUNDS)}/${ROUNDS}`,
+    liveScore: (s) => `${s.hits}`,
+    result: (s) => s.hits,
+    resultNote: (s) => `${s.hits} / ${ROUNDS} fermetures (${t} en ${dpa} fl.)`,
+  };
+}

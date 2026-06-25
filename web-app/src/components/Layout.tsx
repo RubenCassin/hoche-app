@@ -5,6 +5,7 @@ import { useAuth } from '../auth';
 import { getChatUnread, getNotifications } from '../api';
 import { onLive } from '../live';
 import { InviteListener } from './InviteListener';
+import { OcheMark, BellIcon } from './Logo';
 
 const NAV = [
   { to: '/', label: 'Jouer', icon: '🎯', end: true },
@@ -52,11 +53,12 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand">
-          <span className="brand-mark">◎</span>
+          <OcheMark size={30} />
           <span className="display brand-word">HOCHE</span>
           {user && (
             <NavLink to="/notifications" className="bell" title="Notifications">
-              🔔{notifUnread > 0 && <span className="bell-badge">{notifUnread > 9 ? '9+' : notifUnread}</span>}
+              <BellIcon size={18} />
+              {notifUnread > 0 && <span className="bell-badge">{notifUnread > 9 ? '9+' : notifUnread}</span>}
             </NavLink>
           )}
         </div>
