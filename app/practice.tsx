@@ -9,6 +9,7 @@ import { SectionLabel, type SectionIconName } from '@/components/SectionLabel';
 import { Spacing, Radii } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { DRILLS, CATEGORY_LABEL, customDrillKey, type DrillCategory } from '@/hooks/practiceDrills';
+import { CALC_MODES } from '@/hooks/calcModes';
 import { usePracticeStore } from '@/hooks/usePracticeStore';
 
 const DARTS_CHOICES = [3, 6, 9];
@@ -31,7 +32,6 @@ export default function PracticeScreen() {
   const [target, setTarget] = useState(121);
   const [darts, setDarts] = useState(6);
   const customRec = records[customDrillKey(target, darts)];
-  const calcRec = records['calc_checkout'];
   const bumpTarget = (delta: number) => setTarget((t) => Math.max(2, Math.min(180, t + delta)));
   const playCustom = () =>
     router.push({ pathname: '/practice-run', params: { drill: 'custom', target: String(target), darts: String(darts) } });
@@ -103,24 +103,28 @@ export default function PracticeScreen() {
 
         {/* ── Entraînement calcul (sans fléchettes) ── */}
         <View style={styles.section}>
-          <SectionLabel icon="sliders" variant="h5" iconSize={17}>Calcul</SectionLabel>
-          <Pressable
-            onPress={() => router.push('/practice-calc')}
-            style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}
-          >
-            <View style={styles.cardTop}>
-              <OcheText variant="h3" color={C.cream}>🧮 Calcul de checkout</OcheText>
-              <OcheText variant="labelMd" allCaps color={C.amber}>Jouer →</OcheText>
-            </View>
-            <OcheText variant="bodySm" color={C.fg3}>
-              Sans fléchettes : 10 questions, trouve la bonne combinaison pour fermer le score affiché.
-            </OcheText>
-            <View style={styles.recordRow}>
-              <OcheText variant="monoSm" color={calcRec ? C.amber : C.fg3}>
-                {calcRec ? `★ Record : ${calcRec.best} / 10` : 'Aucun essai'}
-              </OcheText>
-            </View>
-          </Pressable>
+          <SectionLabel icon="sliders" variant="h5" iconSize={17}>Calcul · sans fléchettes</SectionLabel>
+          {CALC_MODES.map((m) => {
+            const rec = records[`calc_${m.key}`];
+            return (
+              <Pressable
+                key={m.key}
+                onPress={() => router.push({ pathname: '/practice-calc', params: { mode: m.key } })}
+                style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}
+              >
+                <View style={styles.cardTop}>
+                  <OcheText variant="h3" color={C.cream}>{m.icon} {m.name}</OcheText>
+                  <OcheText variant="labelMd" allCaps color={C.amber}>Jouer →</OcheText>
+                </View>
+                <OcheText variant="bodySm" color={C.fg3}>{m.desc}</OcheText>
+                <View style={styles.recordRow}>
+                  <OcheText variant="monoSm" color={rec ? C.amber : C.fg3}>
+                    {rec ? `★ Record : ${rec.best} / 10` : 'Aucun essai'}
+                  </OcheText>
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
 
         {CATEGORY_ORDER.map((cat) => {
