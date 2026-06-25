@@ -42,7 +42,7 @@ export function X01Game({ roster, config, onExit, onFinish }: {
       if (s.winner !== null) return s;
       const p = s.players[s.turn];
       const projected = p.remaining - total;
-      const bust = projected < 0 || (s.config.doubleOut && projected === 1);
+      const bust = projected < 0 || (s.config.finishMode !== 'simple' && projected === 1);
       visitsLog.current.push({ total: bust ? 0 : total, bust, darts: darts ?? [] });
       setHistory((h) => [...h, s]);
       return addVisit(s, total);
@@ -72,7 +72,7 @@ export function X01Game({ roster, config, onExit, onFinish }: {
     const bot = roster[state.turn]?.bot;
     if (!bot) return;
     const t = setTimeout(() => {
-      const total = x01BotVisit(state.players[state.turn].remaining, bot, state.config.doubleOut);
+      const total = x01BotVisit(state.players[state.turn].remaining, bot, state.config.finishMode !== 'simple');
       submit(total);
     }, 800);
     return () => clearTimeout(t);
@@ -99,14 +99,14 @@ export function X01Game({ roster, config, onExit, onFinish }: {
     const next = [...liveVisit, { points, modifier, segment }];
     const total = next.reduce((s, d) => s + d.points, 0);
     const projected = state.players[state.turn].remaining - total;
-    if (next.length >= 3 || projected <= 0 || (state.config.doubleOut && projected === 1)) submit(total, next.map(dlabel));
+    if (next.length >= 3 || projected <= 0 || (state.config.finishMode !== 'simple' && projected === 1)) submit(total, next.map(dlabel));
     else setLiveVisit(next);
   };
 
   const me = state.players[state.turn];
   const isBotTurn = !!roster[state.turn]?.bot;
   const coRemaining = me.remaining - (inputMode === 'grid' ? liveTotal : 0);
-  const co = state.winner === null ? checkout(coRemaining, state.config.doubleOut, getFavorites()) : null;
+  const co = state.winner === null ? checkout(coRemaining, state.config.finishMode, getFavorites()) : null;
   const isOver = state.winner !== null;
   const submitEntry = () => { const t = parseInt(entry, 10); if (!isNaN(t)) submit(t); };
 
@@ -115,7 +115,7 @@ export function X01Game({ roster, config, onExit, onFinish }: {
       <MomentOverlay event={state.event} nonce={plays} />
       {deciding && <StartDecider names={roster.map((r) => r.name)} onChoose={(i) => { setState((s) => ({ ...s, turn: i, starter: i })); setDeciding(false); }} />}
       <div className="play-head">
-        <div className="muted mono">X01 {state.config.startScore} · {(state.config.setsToWin ?? 1) > 1 ? `${state.config.setsToWin} sets de ${state.config.legsToWin} legs` : `premier à ${state.config.legsToWin}`} · {state.config.doubleOut ? 'double out' : 'simple out'}</div>
+        <div className="muted mono">X01 {state.config.startScore} · {(state.config.setsToWin ?? 1) > 1 ? `${state.config.setsToWin} sets de ${state.config.legsToWin} legs` : `premier à ${state.config.legsToWin}`} · {state.config.finishMode} out</div>
         <button className="btn btn-ghost btn-sm" onClick={onExit}>Quitter</button>
       </div>
 

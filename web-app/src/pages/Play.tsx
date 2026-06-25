@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { saveGame, type GameResult } from '../api';
 import { X01Game } from '../components/X01Game';
+import type { FinishMode } from '../game/x01';
 import { ModeGame } from '../components/ModeGame';
 import { BOT_ORDER, BOT_LABELS } from '../game/bots';
 import { soundsEnabled, setSoundsEnabled, play } from '../sound';
@@ -32,7 +33,9 @@ export function Play() {
   const [startScore, setStartScore] = useState(501);
   const [legsToWin, setLegsToWin] = useState(3);
   const [setsToWin, setSetsToWin] = useState(1);
-  const [doubleOut, setDoubleOut] = useState(true);
+  const [finishMode, setFinishMode] = useState<FinishMode>('double');
+  const [perso, setPerso] = useState(false);
+  const [customScore, setCustomScore] = useState('1001');
   const [cutThroat, setCutThroat] = useState(false);
   const [advanceByMarks, setAdvanceByMarks] = useState(false);
   const [startLives, setStartLives] = useState(3);
@@ -53,7 +56,8 @@ export function Play() {
   if (started) {
     const roster = slots.map((s) => ({ name: s.name.trim() || 'Joueur', bot: s.bot }));
     if (gameType === 'x01') {
-      return <X01Game roster={roster} config={{ startScore, legsToWin, doubleOut, setsToWin }} onExit={() => setStarted(false)} onFinish={onFinish} />;
+      const effStart = perso ? Math.max(2, Math.min(3001, parseInt(customScore, 10) || 501)) : startScore;
+      return <X01Game roster={roster} config={{ startScore: effStart, legsToWin, finishMode, setsToWin }} onExit={() => setStarted(false)} onFinish={onFinish} />;
     }
     return <ModeGame gameType={gameType} roster={roster} config={{ cutThroat, advanceByMarks, startLives, shanghaiRounds }} onExit={() => setStarted(false)} onFinish={onFinish} />;
   }
@@ -78,10 +82,18 @@ export function Play() {
 
         {gameType === 'x01' && (
           <>
-            <Row label="Score">{VARIANTS.map((v) => <button key={v} className={'chip' + (startScore === v ? ' on' : '')} onClick={() => setStartScore(v)}>{v}</button>)}</Row>
+            <Row label="Score">
+              {VARIANTS.map((v) => <button key={v} className={'chip' + (!perso && startScore === v ? ' on' : '')} onClick={() => { setPerso(false); setStartScore(v); }}>{v}</button>)}
+              <button className={'chip' + (perso ? ' on' : '')} onClick={() => setPerso(true)}>Perso</button>
+            </Row>
+            {perso && (
+              <Row label="Score perso">
+                <input style={{ maxWidth: 140 }} value={customScore} inputMode="numeric" maxLength={4} onChange={(e) => setCustomScore(e.target.value.replace(/[^0-9]/g, ''))} placeholder="1001" />
+              </Row>
+            )}
             <Row label="Sets (premier à)">{[1, 3, 5].map((v) => <button key={v} className={'chip' + (setsToWin === v ? ' on' : '')} onClick={() => setSetsToWin(v)}>{v}</button>)}</Row>
             <Row label={setsToWin > 1 ? 'Legs par set (premier à)' : 'Legs (premier à)'}>{LEGS.map((v) => <button key={v} className={'chip' + (legsToWin === v ? ' on' : '')} onClick={() => setLegsToWin(v)}>{v}</button>)}</Row>
-            <Row label="Sortie"><button className={'chip' + (doubleOut ? ' on' : '')} onClick={() => setDoubleOut(true)}>Double</button><button className={'chip' + (!doubleOut ? ' on' : '')} onClick={() => setDoubleOut(false)}>Simple</button></Row>
+            <Row label="Sortie">{(['simple', 'double', 'master'] as FinishMode[]).map((f) => <button key={f} className={'chip' + (finishMode === f ? ' on' : '')} onClick={() => setFinishMode(f)}>{f === 'simple' ? 'Simple' : f === 'double' ? 'Double' : 'Master'}</button>)}</Row>
           </>
         )}
         {gameType === 'cricket' && <Row label="Variante"><button className={'chip' + (!cutThroat ? ' on' : '')} onClick={() => setCutThroat(false)}>Standard</button><button className={'chip' + (cutThroat ? ' on' : '')} onClick={() => setCutThroat(true)}>Cut-throat</button></Row>}

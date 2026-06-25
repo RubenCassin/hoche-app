@@ -24,11 +24,11 @@ export const CALC_MODES: { key: CalcMode; name: string; desc: string; icon: stri
 const rnd = (n: number) => Math.floor(Math.random() * n);
 function shuffle<T>(a: T[]): T[] { const r = [...a]; for (let i = r.length - 1; i > 0; i--) { const j = rnd(i + 1); [r[i], r[j]] = [r[j], r[i]]; } return r; }
 
-const VALID: number[] = (() => { const a: number[] = []; for (let n = 2; n <= 170; n++) if (checkout(n, true)) a.push(n); return a; })();
+const VALID: number[] = (() => { const a: number[] = []; for (let n = 2; n <= 170; n++) if (checkout(n, 'double')) a.push(n); return a; })();
 const VALID_HIGH = VALID.filter((n) => n >= 61); // pour la 1re fléchette (vrai dart de scoring)
-const routeOf = (n: number) => (checkout(n, true) || []).join('  ');
+const routeOf = (n: number) => (checkout(n, 'double') || []).join('  ');
 const BOGEY = [159, 162, 163, 165, 166, 168, 169, 171, 172, 173, 174, 175, 178, 179];
-const firstDartOf = (n: number) => (checkout(n, true) || [])[0];
+const firstDartOf = (n: number) => (checkout(n, 'double') || [])[0];
 
 const SEGMENTS: { label: string; value: number }[] = (() => {
   const s: { label: string; value: number }[] = [{ label: '25', value: 25 }, { label: 'BULL', value: 50 }];
@@ -64,5 +64,5 @@ export function makeCalcQuestion(mode: CalcMode): CalcQuestion {
   }
   // bogey — 50 % fermable / 50 % piège
   const t = Math.random() < 0.5 ? VALID[rnd(VALID.length)] : BOGEY[rnd(BOGEY.length)];
-  return { prompt: 'Fermable en 3 fléchettes ?', big: String(t), answer: checkout(t, true) ? 'Oui' : 'Non', options: ['Oui', 'Non'], hint: 'Sortie au double, en une seule volée.' };
+  return { prompt: 'Fermable en 3 fléchettes ?', big: String(t), answer: checkout(t, 'double') ? 'Oui' : 'Non', options: ['Oui', 'Non'], hint: 'Sortie au double, en une seule volée.' };
 }

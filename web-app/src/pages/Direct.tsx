@@ -223,7 +223,7 @@ export function Direct() {
   const multi = gs.names.length > 2;
   const visitTotal = visit.reduce((s, d) => s + d.points, 0);
   const coRem = gs.remaining[me] - (mode === 'numpad' ? 0 : visitTotal);
-  const co = myTurn ? checkout(coRem, gs.config.finishMode !== 'simple', getFavorites()) : null;
+  const co = myTurn ? checkout(coRem, gs.config.finishMode, getFavorites()) : null;
 
   return (
     <div className="page play">
