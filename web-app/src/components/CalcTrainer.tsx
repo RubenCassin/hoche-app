@@ -1,72 +1,46 @@
 import { useState } from 'react';
-import { checkout } from '../game/x01';
+import { makeCalcQuestion, CALC_MODES, type CalcMode, type CalcQuestion } from '../game/calc';
 import { addResult, getRecords } from '../game/records';
 
-// Entraînement calcul (sans fléchettes) : on s'entraîne à trouver le bon
-// checkout. QCM de 10 questions ; le solveur donne la bonne route, les leurres
-// sont des routes valides d'autres nombres (donc fausses pour la cible).
+// Entraînement calcul (sans fléchettes) — multi-modes. QCM (options) ou saisie
+// numérique selon la question. 10 questions, score + record par mode/compte.
 const TOTAL = 10;
-const RECORD_KEY = 'calc_checkout';
 
-const VALID: number[] = (() => {
-  const a: number[] = [];
-  for (let n = 2; n <= 170; n++) if (checkout(n, true)) a.push(n);
-  return a;
-})();
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
-  return a;
-}
-const routeOf = (n: number): string => (checkout(n, true) || []).join('  ');
-
-interface Q { target: number; options: string[]; correct: string }
-function makeQuestion(): Q {
-  const target = VALID[Math.floor(Math.random() * VALID.length)];
-  const correct = routeOf(target);
-  const distract = new Set<string>();
-  let guard = 0;
-  while (distract.size < 3 && guard++ < 80) {
-    const m = VALID[Math.floor(Math.random() * VALID.length)];
-    const s = routeOf(m);
-    if (s && s !== correct && !distract.has(s)) distract.add(s);
-  }
-  return { target, options: shuffle([correct, ...distract]), correct };
-}
-
-export function CalcTrainer({ account, onExit }: { account: string; onExit: () => void }) {
-  const [qs, setQs] = useState<Q[]>(() => Array.from({ length: TOTAL }, makeQuestion));
+export function CalcTrainer({ mode, account, onExit }: { mode: CalcMode; account: string; onExit: () => void }) {
+  const cfg = CALC_MODES.find((m) => m.key === mode)!;
+  const recKey = `calc_${mode}`;
+  const [qs, setQs] = useState<CalcQuestion[]>(() => Array.from({ length: TOTAL }, () => makeCalcQuestion(mode)));
   const [i, setI] = useState(0);
   const [score, setScore] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
+  const [entry, setEntry] = useState('');
+  const [revealed, setRevealed] = useState(false);
   const [done, setDone] = useState(false);
   const [isRecord, setIsRecord] = useState(false);
-  const rec = getRecords(account)[RECORD_KEY];
-
-  const restart = () => { setQs(Array.from({ length: TOTAL }, makeQuestion)); setI(0); setScore(0); setPicked(null); setDone(false); setIsRecord(false); };
+  const rec = getRecords(account)[recKey];
 
   const q = qs[i];
-  const pick = (opt: string) => {
-    if (picked) return;
-    setPicked(opt);
-    const newScore = score + (opt === q.correct ? 1 : 0);
-    setScore(newScore);
+  const next = (correct: boolean) => {
+    const ns = score + (correct ? 1 : 0);
+    setScore(ns);
     setTimeout(() => {
-      if (i + 1 >= TOTAL) { setDone(true); setIsRecord(addResult(account, RECORD_KEY, newScore, true)); }
-      else { setI(i + 1); setPicked(null); }
-    }, 800);
+      if (i + 1 >= TOTAL) { setDone(true); setIsRecord(addResult(account, recKey, ns, true)); }
+      else { setI(i + 1); setPicked(null); setEntry(''); setRevealed(false); }
+    }, 850);
   };
+  const pickOpt = (opt: string) => { if (picked) return; setPicked(opt); next(opt === q.answer); };
+  const submitNum = () => { if (revealed || entry === '') return; setRevealed(true); next(entry === q.answer); };
+  const restart = () => { setQs(Array.from({ length: TOTAL }, () => makeCalcQuestion(mode))); setI(0); setScore(0); setPicked(null); setEntry(''); setRevealed(false); setDone(false); setIsRecord(false); };
 
   if (done) {
     return (
       <div className="page play">
         <div className="play-head"><button className="btn btn-ghost btn-sm" onClick={onExit}>‹ Entraînement</button></div>
         <div className="card win-card">
-          <div className="eyebrow" style={{ color: 'var(--amber)' }}>Calcul · terminé</div>
+          <div className="eyebrow" style={{ color: 'var(--amber)' }}>{cfg.name} · terminé</div>
           {isRecord && <div className="ok-msg">★ Nouveau record !</div>}
           <div className="display win-name">{score} <span style={{ fontSize: 20, color: 'var(--fg2)' }}>/ {TOTAL}</span></div>
-          <div className="mono muted">{rec ? `Record : ${rec.best} / ${TOTAL}` : ''}</div>
+          {rec && <div className="mono muted">Record : {rec.best} / {TOTAL}</div>}
           <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
             <button className="btn btn-primary" onClick={restart}>Recommencer</button>
             <button className="btn btn-ghost" onClick={onExit}>Quitter</button>
@@ -76,24 +50,38 @@ export function CalcTrainer({ account, onExit }: { account: string; onExit: () =
     );
   }
 
+  const numClass = 'calc-entry mono' + (revealed ? (entry === q.answer ? ' good' : ' bad') : '');
   return (
     <div className="page play">
       <div className="play-head">
         <button className="btn btn-ghost btn-sm" onClick={onExit}>‹ Entraînement</button>
-        <span className="muted mono">Question {i + 1}/{TOTAL} · score {score}</span>
+        <span className="muted mono">{cfg.name} · {i + 1}/{TOTAL} · score {score}</span>
       </div>
 
-      <h2 className="display" style={{ textAlign: 'center', fontSize: 22, marginTop: 8 }}>Comment fermer</h2>
-      <div className="display" style={{ textAlign: 'center', fontSize: 72, color: 'var(--amber)', lineHeight: 1, marginBottom: 18 }}>{q.target}</div>
+      <h2 className="display" style={{ textAlign: 'center', fontSize: q.big ? 22 : 44, marginTop: 8 }}>{q.prompt}</h2>
+      {q.big && <div className="display" style={{ textAlign: 'center', fontSize: 72, color: 'var(--amber)', lineHeight: 1, marginBottom: 18 }}>{q.big}</div>}
 
-      <div className="calc-options">
-        {q.options.map((opt) => {
-          let cls = 'calc-option';
-          if (picked) { if (opt === q.correct) cls += ' good'; else if (opt === picked) cls += ' bad'; }
-          return <button key={opt} className={cls} disabled={!!picked} onClick={() => pick(opt)}>{opt}</button>;
-        })}
-      </div>
-      <p className="muted" style={{ textAlign: 'center', fontSize: 13 }}>Sortie au double — trouve la combinaison qui ferme exactement {q.target}.</p>
+      {q.options ? (
+        <div className="calc-options">
+          {q.options.map((opt) => {
+            let cls = 'calc-option';
+            if (picked) { if (opt === q.answer) cls += ' good'; else if (opt === picked) cls += ' bad'; }
+            return <button key={opt} className={cls} disabled={!!picked} onClick={() => pickOpt(opt)}>{opt}</button>;
+          })}
+        </div>
+      ) : (
+        <div className="calc-num">
+          <div className={numClass}>{entry || '?'}</div>
+          {revealed && entry !== q.answer && <div className="muted" style={{ textAlign: 'center', marginTop: 6 }}>Réponse : <b style={{ color: 'var(--win)' }}>{q.answer}</b></div>}
+          <div className="numpad calc-pad">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => <button key={d} className="num" disabled={revealed} onClick={() => setEntry((e) => (e + d).replace(/^0+/, '').slice(0, 3))}>{d}</button>)}
+            <button className="num" disabled={revealed} onClick={() => setEntry((e) => e.slice(0, -1))}>←</button>
+            <button className="num" disabled={revealed} onClick={() => setEntry((e) => (e + '0').replace(/^0+/, '').slice(0, 3))}>0</button>
+            <button className="num num-ok" disabled={revealed || entry === ''} onClick={submitNum}>OK</button>
+          </div>
+        </div>
+      )}
+      {q.hint && <p className="muted" style={{ textAlign: 'center', fontSize: 13 }}>{q.hint}</p>}
     </div>
   );
 }

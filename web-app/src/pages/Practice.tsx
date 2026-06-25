@@ -3,6 +3,7 @@ import { DRILLS, CATEGORY_LABEL, getDrill, customDrillKey, makeCustomCheckoutDri
 import { getRecords, addResult } from '../game/records';
 import { DartGrid } from '../components/DartGrid';
 import { CalcTrainer } from '../components/CalcTrainer';
+import { CALC_MODES, type CalcMode } from '../game/calc';
 import { useAuth } from '../auth';
 
 const ORDER: DrillCategory[] = ['score', 'doubles', 'checkout', 'parcours'];
@@ -13,15 +14,14 @@ export function Practice() {
   const { user } = useAuth();
   const account = user ? `u${user.id}` : 'guest';
   const [running, setRunning] = useState<DrillDef | null>(null);
-  const [calc, setCalc] = useState(false);
+  const [calcMode, setCalcMode] = useState<CalcMode | null>(null);
   const [target, setTarget] = useState(121);
   const [darts, setDarts] = useState(6);
 
   if (running) return <RunDrill drill={running} account={account} onExit={() => setRunning(null)} />;
-  if (calc) return <CalcTrainer account={account} onExit={() => setCalc(false)} />;
+  if (calcMode) return <CalcTrainer mode={calcMode} account={account} onExit={() => setCalcMode(null)} />;
 
   const records = getRecords(account);
-  const calcRec = records['calc_checkout'];
   const customRec = records[customDrillKey(target, darts)];
   const bump = (delta: number) => setTarget((t) => Math.max(2, Math.min(180, t + delta)));
   return (
@@ -58,12 +58,19 @@ export function Practice() {
       </div>
 
       {/* ── Entraînement calcul (sans fléchettes) ── */}
-      <h3 className="display section-title">Calcul</h3>
-      <button className="card drill-card" onClick={() => setCalc(true)} style={{ textAlign: 'left', width: '100%' }}>
-        <div className="drill-top"><span className="drill-name">🧮 Calcul de checkout</span><span className="tile-go">Jouer →</span></div>
-        <p className="muted drill-desc">Sans fléchettes : 10 questions, trouve la bonne combinaison pour fermer le score affiché. Idéal pour bosser les finitions de tête.</p>
-        <div className="mono drill-rec">{calcRec ? `★ Record : ${calcRec.best} / 10` : 'Aucun essai'}</div>
-      </button>
+      <h3 className="display section-title">Calcul <span className="muted" style={{ fontSize: 13 }}>· sans fléchettes</span></h3>
+      <div className="drill-grid">
+        {CALC_MODES.map((m) => {
+          const rec = records[`calc_${m.key}`];
+          return (
+            <button key={m.key} className="card drill-card" onClick={() => setCalcMode(m.key)}>
+              <div className="drill-top"><span className="drill-name">{m.icon} {m.name}</span><span className="tile-go">Jouer →</span></div>
+              <p className="muted drill-desc">{m.desc}</p>
+              <div className="mono drill-rec">{rec ? `★ Record : ${rec.best} / 10` : 'Aucun essai'}</div>
+            </button>
+          );
+        })}
+      </div>
 
       {ORDER.map((cat) => {
         const drills = DRILLS.filter((d) => d.category === cat);

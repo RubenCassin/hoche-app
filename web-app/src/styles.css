@@ -417,6 +417,11 @@ input:focus { outline: none; border-color: var(--amber); }
 .calc-option.bad { background: var(--brick); border-color: var(--brick); color: #fff; }
 .calc-option:disabled { cursor: default; }
 @media (max-width: 520px) { .calc-options { grid-template-columns: 1fr; } }
+.calc-num { max-width: 320px; margin: 0 auto; }
+.calc-entry { background: var(--walnut-up2); border: 1px solid var(--edge); text-align: center; font-size: 44px; padding: 10px 18px; color: var(--amber); letter-spacing: 4px; }
+.calc-entry.good { border-color: var(--win); color: var(--win); }
+.calc-entry.bad { border-color: var(--brick); color: var(--brick); }
+.calc-pad { margin-top: 12px; }
 
 /* ── Entraînement perso (drill custom) ── */
 .custom-drill { border-color: var(--amber); display: flex; flex-direction: column; gap: 12px; }
