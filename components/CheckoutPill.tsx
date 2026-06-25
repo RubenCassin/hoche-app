@@ -191,7 +191,7 @@ function finisherList(mode: FinishMode, favValues?: Set<number>): Dart[] {
 const FIRST_DART_ORDER: Dart[] = [...TRIPLES_DESC, BULL50, BULL25, ...SINGLES_DESC];
 
 /** Minimal-dart checkout for `remaining` within `dartsLeft`, or null. */
-function solveCheckout(remaining: number, dartsLeft: number, mode: FinishMode, favValues?: Set<number>): string[] | null {
+export function solveCheckout(remaining: number, dartsLeft: number, mode: FinishMode, favValues?: Set<number>): string[] | null {
   const minFinish = mode === 'simple' ? 1 : 2;
   if (remaining < minFinish || remaining > 170) return null;
 

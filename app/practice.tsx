@@ -31,6 +31,7 @@ export default function PracticeScreen() {
   const [target, setTarget] = useState(121);
   const [darts, setDarts] = useState(6);
   const customRec = records[customDrillKey(target, darts)];
+  const calcRec = records['calc_checkout'];
   const bumpTarget = (delta: number) => setTarget((t) => Math.max(2, Math.min(180, t + delta)));
   const playCustom = () =>
     router.push({ pathname: '/practice-run', params: { drill: 'custom', target: String(target), darts: String(darts) } });
@@ -98,6 +99,28 @@ export default function PracticeScreen() {
             </View>
             <OcheButton label="Jouer →" onPress={playCustom} variant="amber" size="md" fullWidth />
           </View>
+        </View>
+
+        {/* ── Entraînement calcul (sans fléchettes) ── */}
+        <View style={styles.section}>
+          <SectionLabel icon="sliders" variant="h5" iconSize={17}>Calcul</SectionLabel>
+          <Pressable
+            onPress={() => router.push('/practice-calc')}
+            style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}
+          >
+            <View style={styles.cardTop}>
+              <OcheText variant="h3" color={C.cream}>🧮 Calcul de checkout</OcheText>
+              <OcheText variant="labelMd" allCaps color={C.amber}>Jouer →</OcheText>
+            </View>
+            <OcheText variant="bodySm" color={C.fg3}>
+              Sans fléchettes : 10 questions, trouve la bonne combinaison pour fermer le score affiché.
+            </OcheText>
+            <View style={styles.recordRow}>
+              <OcheText variant="monoSm" color={calcRec ? C.amber : C.fg3}>
+                {calcRec ? `★ Record : ${calcRec.best} / 10` : 'Aucun essai'}
+              </OcheText>
+            </View>
+          </Pressable>
         </View>
 
         {CATEGORY_ORDER.map((cat) => {

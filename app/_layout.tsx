@@ -159,6 +159,7 @@ export default function RootLayout() {
             <Stack.Screen name="tournament" />
             <Stack.Screen name="practice" />
             <Stack.Screen name="practice-run" />
+            <Stack.Screen name="practice-calc" />
             <Stack.Screen name="challenge" options={{ presentation: 'modal' }} />
             <Stack.Screen name="challenges" />
             <Stack.Screen name="history" />
