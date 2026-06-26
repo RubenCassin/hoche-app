@@ -50,6 +50,11 @@ app.use('/notifications', notificationsRouter);
 app.use('/chat', chatRouter);
 app.use('/tournaments', tournamentsRouter);
 
+// Avatars uploadés (volume persistant). Servis statiquement ; l'URL porte un
+// `?v=<ts>` côté client pour casser le cache après changement.
+const { AVATAR_DIR } = require('./storage');
+app.use('/uploads/avatars', express.static(AVATAR_DIR));
+
 app.get('/health', function (req, res) {
   res.json({ status: 'ok', service: 'HOCHE Backend', version: '2.0.0' });
 });

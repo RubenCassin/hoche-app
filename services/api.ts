@@ -46,6 +46,7 @@ export interface User {
   elo?: number;
   eloGames?: number;
   flags?: number;
+  favoriteDoubles?: number[];
 }
 
 export interface LocationInput {
@@ -153,6 +154,7 @@ export const updateMe = (patch: {
   avatarUrl?: string | null;
   currentPassword?: string;
   newPassword?: string;
+  favoriteDoubles?: number[];
 }) => api.patch<User>('/auth/me', patch).then((r) => r.data);
 
 /** Suppression définitive du compte (cascade côté serveur). */

@@ -11,3 +11,9 @@ export function toggleFavorite(seg: number): number[] {
   localStorage.setItem(KEY, JSON.stringify(favs));
   return favs;
 }
+/** Remplace les favoris (hydratation depuis le compte à la connexion). */
+export function setFavorites(arr: number[] | undefined | null): number[] {
+  favs = Array.isArray(arr) ? arr.slice() : [];
+  localStorage.setItem(KEY, JSON.stringify(favs));
+  return favs;
+}

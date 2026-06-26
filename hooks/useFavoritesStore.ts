@@ -11,6 +11,8 @@ interface FavoritesState {
   favoriteDoubles: number[];
   toggle: (seg: number) => void;
   has: (seg: number) => boolean;
+  /** Remplace les favoris (hydratation depuis le compte à la connexion). */
+  setFavorites: (arr: number[] | undefined | null) => void;
 }
 
 export const useFavoritesStore = create<FavoritesState>()(
@@ -24,6 +26,7 @@ export const useFavoritesStore = create<FavoritesState>()(
         });
       },
       has: (seg) => get().favoriteDoubles.includes(seg),
+      setFavorites: (arr) => set({ favoriteDoubles: Array.isArray(arr) ? arr.slice() : [] }),
     }),
     {
       name: 'oche.favoriteDoubles',

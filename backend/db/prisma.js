@@ -82,6 +82,7 @@ function userToPublic(u) {
     elo: typeof u.elo === 'number' ? u.elo : 1000,
     eloGames: u.eloGames || 0,
     flags: u.flags || 0,
+    favoriteDoubles: jarr(u.favoriteDoubles),
   };
 }
 

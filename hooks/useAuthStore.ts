@@ -11,6 +11,7 @@ import {
 } from '@/services/api';
 import { queryClient } from '@/services/queryClient';
 import { usePracticeStore } from '@/hooks/usePracticeStore';
+import { useFavoritesStore } from '@/hooks/useFavoritesStore';
 
 const TOKEN_KEY = 'oche.token';
 const GUEST_KEY = 'oche.guest';
@@ -22,6 +23,13 @@ function scopePractice(user: User | null) {
   const p = usePracticeStore.persist;
   if (p.hasHydrated()) apply();
   else p.onFinishHydration(apply);
+}
+
+/** Hydrate les doubles préférés depuis le compte (sync multi-appareils). En
+ *  invité, on garde la préférence locale (rien à faire). */
+function scopeFavorites(user: User | null) {
+  if (!user) return;
+  useFavoritesStore.getState().setFavorites(user.favoriteDoubles);
 }
 
 type AuthStatus = 'loading' | 'authed' | 'guest';
@@ -70,6 +78,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       const user = await fetchMe(); // validates the token
       set({ status: 'authed', token, user, guestMode: false });
       scopePractice(user);
+      scopeFavorites(user);
     } catch (e) {
       await persistToken(null);
       set({ status: 'guest', token: null, user: null });
@@ -85,6 +94,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       queryClient.clear();
       set({ status: 'authed', token, user, guestMode: false });
       scopePractice(user);
+      scopeFavorites(user);
     } catch (e) {
       throw new Error(apiErrorMessage(e, 'Connexion impossible'));
     }
@@ -98,6 +108,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       queryClient.clear();
       set({ status: 'authed', token, user, guestMode: false });
       scopePractice(user);
+      scopeFavorites(user);
     } catch (e) {
       throw new Error(apiErrorMessage(e, 'Inscription impossible'));
     }
@@ -127,6 +138,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       const user = await fetchMe();
       set({ user });
+      scopeFavorites(user);
     } catch (e) {
       // keep the current user on a transient failure
     }

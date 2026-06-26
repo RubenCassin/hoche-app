@@ -34,6 +34,7 @@ model User {
   demo         Boolean  @default(false)
   pushTokens   String   @default("[]") // JSON string[]
   badges       String   @default("[]") // JSON string[]
+  favoriteDoubles String @default("[]") // JSON number[] — doubles préférés (sync compte)
 
   games         Game[]
   posts         Post[]

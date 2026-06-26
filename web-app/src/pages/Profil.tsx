@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getStats, getFollowCounts, updateMe, apiError } from '../api';
+import { getStats, getFollowCounts, updateMe, uploadAvatar, apiError } from '../api';
 import { useAuth } from '../auth';
 import { BADGES } from '../badges';
 import { getFavorites, toggleFavorite } from '../favorites';
@@ -35,12 +35,50 @@ export function Profil() {
     setBusy(false);
   };
 
+  // Toggle d'un double préféré → maj locale (solveur) + persistance sur le compte.
+  const onToggleFav = (seg: number) => {
+    const next = toggleFavorite(seg);
+    setFavs(next);
+    if (user) updateMe({ favoriteDoubles: next }).then(setUser).catch(() => {});
+  };
+
+  // Upload d'avatar : on redimensionne en 256px (carré centré) → JPEG léger → backend.
+  const onPickAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = async () => {
+        const size = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        const s = Math.min(img.width, img.height);
+        ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        setBusy(true); setMsg(null);
+        try { const u = await uploadAvatar(dataUrl); setUser(u); setAvatarUrl(u.avatarUrl ?? ''); setMsg({ t: 'Photo mise à jour', ok: true }); }
+        catch (err) { setMsg({ t: apiError(err), ok: false }); }
+        setBusy(false);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="page">
       <h1 className="display page-title">Profil</h1>
 
       <div className="card profil-head">
-        <div className="avatar-lg">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials}</div>
+        <label className="avatar-lg avatar-edit" title="Changer la photo">
+          {avatarUrl ? <img src={avatarUrl} alt="" /> : initials}
+          <span className="avatar-cam">📷</span>
+          <input type="file" accept="image/*" onChange={onPickAvatar} disabled={busy} hidden />
+        </label>
         <div className="profil-id">
           <div className="display profil-name">{user?.name}</div>
           <div className="muted">{user?.username}</div>
@@ -97,9 +135,9 @@ export function Profil() {
         <div className="fav-grid">
           {[...Array(20)].map((_, i) => {
             const seg = i + 1; const on = favs.includes(seg);
-            return <button key={seg} className={'fav-cell' + (on ? ' on' : '')} onClick={() => setFavs(toggleFavorite(seg))}>D{seg}</button>;
+            return <button key={seg} className={'fav-cell' + (on ? ' on' : '')} onClick={() => onToggleFav(seg)}>D{seg}</button>;
           })}
-          <button className={'fav-cell' + (favs.includes(25) ? ' on' : '')} onClick={() => setFavs(toggleFavorite(25))}>Bull</button>
+          <button className={'fav-cell' + (favs.includes(25) ? ' on' : '')} onClick={() => onToggleFav(25)}>Bull</button>
         </div>
       </div>
 

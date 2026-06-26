@@ -15,7 +15,7 @@ import { flagEmoji } from '@/constants/flag';
 import { useTheme, useThemeStore } from '@/hooks/useTheme';
 import { useGameStore } from '@/hooks/useGameStore';
 import { useAuthStore } from '@/hooks/useAuthStore';
-import { getStats, getFollowCounts } from '@/services/api';
+import { getStats, getFollowCounts, updateMe } from '@/services/api';
 import { detectAndSyncLocation } from '@/services/locationService';
 import { queryClient } from '@/services/queryClient';
 import { soundsEnabled, setSoundsEnabled } from '@/services/soundService';
@@ -65,7 +65,12 @@ export default function ProfileScreen() {
   };
 
   const favoriteDoubles = useFavoritesStore((s) => s.favoriteDoubles);
-  const toggleFavorite = useFavoritesStore((s) => s.toggle);
+  const toggleFavoriteRaw = useFavoritesStore((s) => s.toggle);
+  // Toggle local (solveur) + persistance sur le compte (sync multi-appareils).
+  const toggleFavorite = (seg: number) => {
+    toggleFavoriteRaw(seg);
+    if (user) updateMe({ favoriteDoubles: useFavoritesStore.getState().favoriteDoubles }).catch(() => {});
+  };
 
   const { data: stats } = useQuery({
     queryKey: ['stats', user?.id],

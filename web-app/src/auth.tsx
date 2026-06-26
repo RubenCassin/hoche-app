@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { fetchMe, getToken, setToken, type User } from './api';
 import { liveConnect, liveDisconnect } from './live';
 import { detectAndSyncLocation } from './geo';
+import { setFavorites } from './favorites';
 
 const GUEST_KEY = 'hoche.web.guest';
 
@@ -36,12 +37,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const t = getToken();
     if (!t) { if (localStorage.getItem(GUEST_KEY) === '1') setGuest(true); setLoading(false); return; }
     fetchMe()
-      .then((u) => { setUser(u); liveConnect(); maybeGeo(u); })
+      .then((u) => { setUser(u); setFavorites(u.favoriteDoubles); liveConnect(); maybeGeo(u); })
       .catch(() => setToken(null))
       .finally(() => setLoading(false));
   }, []);
 
-  const signIn = (token: string, u: User) => { localStorage.removeItem(GUEST_KEY); setGuest(false); setToken(token); setUser(u); liveConnect(); maybeGeo(u); };
+  const signIn = (token: string, u: User) => { localStorage.removeItem(GUEST_KEY); setGuest(false); setToken(token); setUser(u); setFavorites(u.favoriteDoubles); liveConnect(); maybeGeo(u); };
   const signOut = () => { liveDisconnect(); localStorage.removeItem(GUEST_KEY); setGuest(false); setToken(null); setUser(null); };
   const continueAsGuest = () => { localStorage.setItem(GUEST_KEY, '1'); setGuest(true); };
 

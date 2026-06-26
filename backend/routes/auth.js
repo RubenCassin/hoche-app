@@ -1,9 +1,12 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
 const router = express.Router();
 const { prisma, userToPublic, jarr, jstr } = require('../db/prisma');
 const { signToken, requireAuth } = require('../auth');
 const { rateLimit } = require('../rateLimit');
+const { AVATAR_DIR } = require('../storage');
 
 function normalizeUsername(raw) {
   const u = String(raw || '').trim().toLowerCase().replace(/^@+/, '');
@@ -127,6 +130,11 @@ router.patch('/me', requireAuth, async function (req, res, next) {
       if (pwErr) return res.status(400).json({ error: pwErr });
       data.passwordHash = bcrypt.hashSync(String(req.body.newPassword), 10);
     }
+    if (req.body.favoriteDoubles !== undefined) {
+      const arr = Array.isArray(req.body.favoriteDoubles) ? req.body.favoriteDoubles : [];
+      const clean = [...new Set(arr.map((n) => parseInt(n, 10)).filter((n) => (n >= 1 && n <= 20) || n === 25))].slice(0, 21);
+      data.favoriteDoubles = jstr(clean);
+    }
 
     const updated = await prisma.user.update({ where: { id: req.userId }, data });
     res.json(userToPublic(updated));
@@ -190,6 +198,30 @@ router.post('/location', requireAuth, async function (req, res, next) {
         city: clip(req.body.city, 80),
       },
     });
+    res.json(userToPublic(updated));
+  } catch (e) { next(e); }
+});
+
+// POST /auth/avatar { dataUrl }  (auth) — upload d'un avatar (image en data URL
+// base64, redimensionnée petit côté client). Écrit dans le volume persistant et
+// pose une avatarUrl absolue (marche pour le web ET le mobile).
+router.post('/avatar', requireAuth, async function (req, res, next) {
+  try {
+    const dataUrl = String(req.body.dataUrl || '');
+    const m = dataUrl.match(/^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/=]+)$/);
+    if (!m) return res.status(400).json({ error: 'Image invalide (png / jpg / webp attendu)' });
+    const ext = m[1] === 'jpeg' ? 'jpg' : m[1];
+    const buf = Buffer.from(m[2], 'base64');
+    if (buf.length < 64) return res.status(400).json({ error: 'Image vide' });
+    if (buf.length > 220 * 1024) return res.status(413).json({ error: 'Image trop lourde — réduis-la (≈ 256 px).' });
+    // Un seul fichier par compte (on écrase, et on nettoie les autres extensions).
+    for (const e of ['png', 'jpg', 'webp']) {
+      if (e !== ext) { try { fs.unlinkSync(path.join(AVATAR_DIR, `u${req.userId}.${e}`)); } catch (_) { /* absent */ } }
+    }
+    fs.writeFileSync(path.join(AVATAR_DIR, `u${req.userId}.${ext}`), buf);
+    const base = `${req.protocol}://${req.get('host')}`;
+    const url = `${base}/uploads/avatars/u${req.userId}.${ext}?v=${Date.now()}`;
+    const updated = await prisma.user.update({ where: { id: req.userId }, data: { avatarUrl: url } });
     res.json(userToPublic(updated));
   } catch (e) { next(e); }
 });
