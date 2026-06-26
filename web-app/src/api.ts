@@ -27,7 +27,7 @@ export function apiError(e: any, fallback = 'Une erreur est survenue') {
 export interface User {
   id: number; name: string; username: string; avatarUrl?: string | null;
   elo?: number; eloGames?: number; country?: string | null; countryCode?: string | null;
-  favoriteDoubles?: number[];
+  favoriteDoubles?: number[]; email?: string | null;
 }
 export interface Stats {
   matches_played: number; matches_won: number; win_pct: number;
@@ -62,7 +62,7 @@ export const getLeaderboard = (scope: LbScope) =>
 // ── Profil ────────────────────────────────────────────────────────────────────
 export const getFollowCounts = (id: number) =>
   api.get<{ followers: number; following: number }>(`/social/counts/${id}`).then((r) => r.data);
-export const updateMe = (patch: { name?: string; avatarUrl?: string | null; currentPassword?: string; newPassword?: string; favoriteDoubles?: number[] }) =>
+export const updateMe = (patch: { name?: string; avatarUrl?: string | null; currentPassword?: string; newPassword?: string; favoriteDoubles?: number[]; email?: string | null }) =>
   api.patch<User>('/auth/me', patch).then((r) => r.data);
 // Upload d'avatar : data URL base64 (image redimensionnée côté client).
 export const uploadAvatar = (dataUrl: string) =>
@@ -100,8 +100,16 @@ export const likePost = (postId: number) =>
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const login = (username: string, password: string) =>
   api.post<{ token: string; user: User }>('/auth/login', { username, password }).then((r) => r.data);
-export const register = (name: string, username: string, password: string) =>
-  api.post<{ token: string; user: User }>('/auth/register', { name, username, password }).then((r) => r.data);
+export const register = (name: string, username: string, password: string, email?: string) =>
+  api.post<{ token: string; user: User }>('/auth/register', { name, username, password, email }).then((r) => r.data);
+
+// ── Récupération de compte (mot de passe / identifiant oubliés) ──────────────
+export const forgotPassword = (email: string) =>
+  api.post<{ ok: boolean }>('/auth/forgot-password', { email }).then((r) => r.data);
+export const resetPassword = (token: string, newPassword: string) =>
+  api.post<{ ok: boolean; username: string }>('/auth/reset-password', { token, newPassword }).then((r) => r.data);
+export const forgotUsername = (email: string) =>
+  api.post<{ ok: boolean }>('/auth/forgot-username', { email }).then((r) => r.data);
 export const fetchMe = () => api.get<User>('/auth/me').then((r) => r.data);
 export const getStats = (id: number) => api.get<Stats>(`/users/${id}/stats`).then((r) => r.data);
 

@@ -35,6 +35,9 @@ model User {
   pushTokens   String   @default("[]") // JSON string[]
   badges       String   @default("[]") // JSON string[]
   favoriteDoubles String @default("[]") // JSON number[] — doubles préférés (sync compte)
+  email           String?   // pour récupération de mot de passe / identifiant
+  resetTokenHash  String?   // SHA-256 du token de reset (jamais le token en clair)
+  resetTokenExp   DateTime? // expiration du token de reset
 
   games         Game[]
   posts         Post[]

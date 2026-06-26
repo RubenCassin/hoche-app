@@ -13,6 +13,7 @@ export function Profil() {
   const { data: counts } = useQuery({ queryKey: ['counts', user?.id], queryFn: () => getFollowCounts(user!.id), enabled: !!user });
 
   const [name, setName] = useState(user?.name ?? '');
+  const [email, setEmail] = useState(user?.email ?? '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? '');
   const [curPw, setCurPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -24,7 +25,7 @@ export function Profil() {
 
   const saveInfo = async () => {
     setBusy(true); setMsg(null);
-    try { const u = await updateMe({ name: name.trim(), avatarUrl: avatarUrl.trim() || null }); setUser(u); setMsg({ t: 'Profil mis à jour', ok: true }); }
+    try { const u = await updateMe({ name: name.trim(), avatarUrl: avatarUrl.trim() || null, email: email.trim() || null }); setUser(u); setMsg({ t: 'Profil mis à jour', ok: true }); }
     catch (e) { setMsg({ t: apiError(e), ok: false }); }
     setBusy(false);
   };
@@ -146,6 +147,8 @@ export function Profil() {
         <div className="card form-col">
           <label className="field-label">Nom affiché</label>
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
+          <label className="field-label">Email <span className="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>(récupération de compte)</span></label>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="toi@exemple.com" />
           <label className="field-label">Avatar (URL)</label>
           <input value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://…" />
           <button className="btn btn-amber" onClick={saveInfo} disabled={busy}>Enregistrer</button>

@@ -453,6 +453,11 @@ input:focus { outline: none; border-color: var(--amber); }
 .decider-winner { font-family: var(--display); font-size: 28px; color: var(--amber); }
 .decider-skip { margin-top: 8px; color: var(--fg3); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; background: none; border: none; cursor: pointer; }
 
+/* ── Liens de récupération (login) ── */
+.login-links { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.link-btn { background: none; border: none; color: var(--fg2); font-size: 13px; text-decoration: underline; padding: 2px 0; }
+.link-btn:hover { color: var(--amber); }
+
 /* ── Barres de stats (par jeu / top segments) ── */
 .seg-stat-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
 .seg-stat-label { width: 110px; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

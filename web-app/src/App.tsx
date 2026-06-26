@@ -1,7 +1,8 @@
 import { type ReactNode } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './auth';
 import { Login } from './pages/Login';
+import { Reset } from './pages/Reset';
 import { Layout } from './components/Layout';
 import { ConnectPrompt } from './components/ConnectPrompt';
 import { Dashboard } from './pages/Dashboard';
@@ -27,10 +28,13 @@ import { HocheLogo } from './components/Logo';
 
 export function App() {
   const { user, guest, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <div className="center-screen"><HocheLogo vertical markSize={72} wordSize={44} /></div>;
   }
+  // Lien de réinitialisation (email) — accessible même déconnecté.
+  if (location.pathname === '/reset') return <Reset />;
   if (!user && !guest) return <Login />;
 
   // En invité : jeu local + entraînement OK ; les écrans « compte » invitent à se connecter.
