@@ -161,6 +161,10 @@ export const updateMe = (patch: {
 export const deleteMe = (password: string) =>
   api.delete<{ ok: boolean }>('/auth/me', { data: { password } }).then((r) => r.data);
 
+/** Upload d'un avatar : data URL base64 (image redimensionnée côté client). */
+export const uploadAvatar = (dataUrl: string) =>
+  api.post<User>('/auth/avatar', { dataUrl }).then((r) => r.data);
+
 export const registerPushToken = (token: string) =>
   api.post<{ ok: boolean }>('/auth/push-token', { token }).then((r) => r.data);
 

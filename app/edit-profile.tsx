@@ -9,7 +9,9 @@ import { MonogramPortrait } from '@/components/MonogramPortrait';
 import { Spacing, Radii } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/hooks/useAuthStore';
-import { updateMe, deleteMe, apiErrorMessage } from '@/services/api';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { updateMe, deleteMe, uploadAvatar, apiErrorMessage } from '@/services/api';
 import { queryClient } from '@/services/queryClient';
 
 export default function EditProfileScreen() {
@@ -23,7 +25,33 @@ export default function EditProfileScreen() {
   const [name, setName] = useState(user?.name ?? '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? '');
   const [saving, setSaving] = useState(false);
+  const [picking, setPicking] = useState(false);
   const [msg, setMsg] = useState<{ text: string; error: boolean } | null>(null);
+
+  // Choisir une photo → recadrage carré → redimensionnée 256px JPEG → upload.
+  const pickAvatar = async () => {
+    if (picking) return;
+    setMsg(null);
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) { setMsg({ text: 'Autorise l’accès aux photos.', error: true }); return; }
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, aspect: [1, 1], quality: 1 });
+    if (res.canceled || !res.assets?.[0]) return;
+    setPicking(true);
+    try {
+      const m = await ImageManipulator.manipulateAsync(
+        res.assets[0].uri,
+        [{ resize: { width: 256, height: 256 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+      const u = await uploadAvatar(`data:image/jpeg;base64,${m.base64}`);
+      setAvatarUrl(u.avatarUrl ?? '');
+      await refreshUser();
+      setMsg({ text: 'Photo mise à jour ✓', error: false });
+    } catch (e) {
+      setMsg({ text: apiErrorMessage(e), error: true });
+    }
+    setPicking(false);
+  };
 
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -101,9 +129,12 @@ export default function EditProfileScreen() {
           <OcheText variant="h5" allCaps color={C.fg2} style={styles.cardTitle}>Identité</OcheText>
 
           <View style={styles.avatarRow}>
-            <MonogramPortrait name={name || '?'} avatarUrl={avatarUrl.trim() || null} size={72} shape="square" />
-            <View style={{ flex: 1, gap: Spacing.s1 }}>
-              <OcheText variant="labelSm" allCaps color={C.fg3}>Avatar (URL d’image)</OcheText>
+            <Pressable onPress={pickAvatar} disabled={picking} hitSlop={6}>
+              <MonogramPortrait name={name || '?'} avatarUrl={avatarUrl.trim() || null} size={72} shape="square" />
+            </Pressable>
+            <View style={{ flex: 1, gap: Spacing.s2 }}>
+              <OcheButton label={picking ? 'Envoi…' : '📷 Choisir une photo'} onPress={pickAvatar} variant="secondary" size="sm" loading={picking} fullWidth />
+              <OcheText variant="labelSm" allCaps color={C.fg3}>ou avatar par URL</OcheText>
               <TextInput
                 style={styles.input}
                 value={avatarUrl}
